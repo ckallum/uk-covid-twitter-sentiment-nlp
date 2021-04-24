@@ -27,6 +27,7 @@ countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
 all_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
+
 # Data Sources
 hashtag_data_sources = {'covid': pd.read_csv('data/covid/top_ten_hashtags_per_day.csv'),
                         'lockdown': pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')}
