@@ -24,18 +24,21 @@ r_numbers = pd.read_csv('data/COVID-Dataset/r_numbers.csv')
 df_events = pd.read_csv('data/events/key_events.csv', skipinitialspace=True, usecols=['Date', 'Event'])
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
-
+all_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
+all_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
 # Data Sources
 hashtag_data_sources = {'covid': pd.read_csv('data/covid/top_ten_hashtags_per_day.csv'),
                         'lockdown': pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')}
 geo_df_data_sources = {'covid': pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv'),
-                          'lockdown': pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')}
+                       'lockdown': pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')}
 
-all_sentiment_data_sources = {'covid': pd.read_csv('data/covid/all_tweet_sentiments.csv'),
-                              'lockdown': pd.read_csv('data/lockdown/all_tweet_sentiments.csv')}
-sentiment_dropdown_value_to_score = {'nn': 'nn-predictions_avg_score', 'textblob': 'textblob-predictions_avg_score',
+all_sentiment_data_sources = {'covid': all_covid,
+                              'lockdown': all_lockdown}
+sentiment_dropdown_value_to_avg_score = {'nn': 'nn-predictions_avg_score', 'textblob': 'textblob-predictions_avg_score',
                                      'vader': 'vader-predictions_avg_score'}
-sentiment_dropdown_value_to_labels = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
+sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-score',
+                                     'vader': 'vader-score'}
+sentiment_dropdown_value_to_predictions = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
                                       'vader': 'vader-predictions'}
 tweet_counts_sources = {'covid': pd.read_csv('data/covid/daily_tweet_count_country.csv'),
                         'lockdown': pd.read_csv('data/lockdown/daily_tweet_count_country.csv')}
@@ -58,7 +61,7 @@ fig_0 = px.choropleth_mapbox(
     locations="id",
     featureidkey='properties.id',
     geojson=uk_counties,
-    color=sentiment_dropdown_value_to_score['nn'],
+    color=sentiment_dropdown_value_to_avg_score['nn'],
     hover_name='county',
     mapbox_style='white-bg',
     color_continuous_scale=px.colors.diverging.Temps_r,
@@ -101,7 +104,7 @@ def indicator(color, text, id_value):
                 children=text,
                 className="info_text"
             ),
-            html.H6(
+            html.H4(
                 id=id_value,
                 className="indicator_value"),
         ],
@@ -195,11 +198,6 @@ app.layout = html.Div(
                     filters(),
                     covid_stats_indicators()],
                     className='row'),
-                html.Div(children=[
-                    html.Button('Play', id='play-button', n_clicks=0)
-                ]
-                    , className='row'
-                ),
                 html.Div(children=[
                     html.Div(
                         id="slider-container",
@@ -428,7 +426,7 @@ def update_bar_chart(selected_date, source, nlp):
     data = all_sentiment_data_sources[source]
     data['date'] = pd.to_datetime(data['date']).dt.date
     df = data[data['date'] == dates_list[selected_date]]
-    label = sentiment_dropdown_value_to_labels[nlp]
+    label = sentiment_dropdown_value_to_predictions[nlp]
     countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
     sentiment_labels = ['neg', 'neu', 'pos']
     sentiment_dict = {
@@ -483,7 +481,7 @@ def play(n_clicks):
 )
 def display_map(day, region, nlp, topic):
     geo_df = geo_df_data_sources[topic]
-    color = sentiment_dropdown_value_to_score[nlp]
+    color = sentiment_dropdown_value_to_avg_score[nlp]
     # Initial map
     date = str(dates_list[day].date())
     geo_df = geo_df.loc[geo_df['date'] == date]
@@ -540,11 +538,11 @@ def display_stats(day):
 )
 def display_ma_sentiment(day, topic, sentiment_type):
     actual_date = str(dates_list[day].date())
-    sentiment_col = sentiment_dropdown_value_to_score[sentiment_type]
-    sentiment_data = all_sentiment_data_sources[topic]
+    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+    sentiment_data = geo_df_data_sources[topic]
     agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
                                                           actual_date)
-    df_sent, df_vol = format_df_ma_sent(agg_data, sentiment_dropdown_value_to_score[sentiment_type], start_global,
+    df_sent, df_vol = format_df_ma_sent(agg_data, sentiment_dropdown_value_to_avg_score[sentiment_type], start_global,
                                         actual_date), \
                       format_df_ma_tweet_vol(
                           tweet_counts_sources[topic],

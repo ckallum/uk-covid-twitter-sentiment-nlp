@@ -1,4 +1,4 @@
-date,county,country,nn-predictions_avg_sentiment,nn-predictions_avg_score,vader-predictions_avg_sentiment,vader-predictions_avg_score,textblob-predictions_avg_sentiment,textblob-predictions_avg_score,id
+date,county,country,nn-predictions-avg_label,nn-predictions_avg_score,vader-predictions_avg_label,vader-predictions_avg_score,textblob-predictions_avg_label,textblob-predictions_avg_score,id
 2020-03-20,Bedfordshire,England,0.75,0.38163961567857135,-0.07142857142857142,0.01288214285714285,0.17857142857142858,0.044517431972789116,0
 2020-03-20,Berkshire,England,0.5555555555555556,0.21380375296296295,0.4444444444444444,0.28468518518518515,0.2962962962962963,0.07624233962196925,1
 2020-03-20,Buckinghamshire,England,0.7666666666666667,0.3856501210666666,0.4,0.22566000000000003,0.5,0.18673716329966333,2

@@ -12,7 +12,7 @@ MA_win = 7
 #     df_stats = df_stats.reindex(index=df_stats.index[::-1])  # Flipping df as dates are wrong way round (needed for MA)
 
 def create_event_array(df_events, start, end):
-    date_list = [str(date.date().strftime('%d/%m/%Y')) for date in pd.date_range(start=start, end=end).tolist()]
+    date_list = [str(date.date().strftime('%d-%m-%Y')) for date in pd.date_range(start=start, end=end).tolist()]
     event_arr = []
     for date in date_list:
         if date in df_events['Date'].unique():
