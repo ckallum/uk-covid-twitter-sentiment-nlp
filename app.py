@@ -7,7 +7,10 @@ import pandas as pd
 import plotly.graph_objects as go
 import json
 from dash.dependencies import Input, Output
-from utils.daily_deaths_vs_sentiment import create_event_array
+from utils.plotting import create_event_array, plot_covid_stats, format_df_ma_stats, format_df_ma_sent, \
+    format_df_ma_tweet_vol, plot_sentiment_vs_volume
+from utils.aggregations import aggregate_sentiment_by_region_type_by_date
+from plotly.subplots import make_subplots
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -15,22 +18,28 @@ server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
 
 # READ DATA
-df_covid_stats = pd.read_csv('data/COVID-Dataset/uk_covid_stats.csv', skipinitialspace=True, )
+df_covid_stats = pd.read_csv('data/COVID-Dataset/uk_covid_stats.csv', skipinitialspace=True)
 uk_counties = json.load(open('data/Geojson/uk_counties_simpler.json', 'r'))
-covid_geo_df = pd.read_csv('data/covid/county_daily_sentiment.csv')
 r_numbers = pd.read_csv('data/COVID-Dataset/r_numbers.csv')
 df_events = pd.read_csv('data/events/key_events.csv', skipinitialspace=True, usecols=['Date', 'Event'])
+countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
+counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
+
 # Data Sources
 hashtag_data_sources = {'covid': pd.read_csv('data/covid/top_ten_hashtags_per_day.csv'),
                         'lockdown': pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')}
-sentiment_data_sources = {'covid': pd.read_csv('data/covid/all_tweet_sentiments.csv'),
-                          'lockdown': pd.read_csv('data/lockdown/all_tweet_sentiments.csv')}
+geo_df_data_sources = {'covid': pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv'),
+                          'lockdown': pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')}
+
+all_sentiment_data_sources = {'covid': pd.read_csv('data/covid/all_tweet_sentiments.csv'),
+                              'lockdown': pd.read_csv('data/lockdown/all_tweet_sentiments.csv')}
 sentiment_dropdown_value_to_score = {'nn': 'nn-predictions_avg_score', 'textblob': 'textblob-predictions_avg_score',
-                                      'vader': 'vader-predictions_avg_score'}
+                                     'vader': 'vader-predictions_avg_score'}
 sentiment_dropdown_value_to_labels = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
                                       'vader': 'vader-predictions'}
 tweet_counts_sources = {'covid': pd.read_csv('data/covid/daily_tweet_count_country.csv'),
                         'lockdown': pd.read_csv('data/lockdown/daily_tweet_count_country.csv')}
+regions_lists = {'county': counties, 'country': countries}
 
 # Dates
 weeks = r_numbers['date'].tolist()
@@ -43,13 +52,13 @@ dates_list = pd.date_range(start=start_global, end=end_global).tolist()
 events_array = create_event_array(df_events, start_global, end_global)
 
 # Initial map
-covid_geo_df = covid_geo_df.loc[covid_geo_df['date'] == start_global]
+covid_geo_df = geo_df_data_sources['covid'].loc[geo_df_data_sources['covid']['date'] == start_global]
 fig_0 = px.choropleth_mapbox(
     covid_geo_df,
     locations="id",
     featureidkey='properties.id',
     geojson=uk_counties,
-    color='sentiment',
+    color=sentiment_dropdown_value_to_score['nn'],
     hover_name='county',
     mapbox_style='white-bg',
     color_continuous_scale=px.colors.diverging.Temps_r,
@@ -121,7 +130,7 @@ def filters():
             html.Div(children=[
                 html.P(id='region-selected', children='Select Region Grouping'),
                 dcc.Dropdown(
-                    id="heatmap_dropdown",
+                    id="region-dropdown",
                     options=[
                         {"label": "Counties", "value": "county"},
                         {"label": "Countries", "value": "country"}
@@ -179,10 +188,18 @@ app.layout = html.Div(
         html.Div(
             id="app-container",
             children=[
+                # dcc.Interval(id='auto-stepper',
+                #              interval=0,  # in milliseconds
+                #              n_intervals=0),
                 html.Div(children=[
                     filters(),
                     covid_stats_indicators()],
                     className='row'),
+                html.Div(children=[
+                    html.Button('Play', id='play-button', n_clicks=0)
+                ]
+                    , className='row'
+                ),
                 html.Div(children=[
                     html.Div(
                         id="slider-container",
@@ -251,6 +268,41 @@ app.layout = html.Div(
                 )
                 ,
                 html.Div(
+                    id='covid-stats',
+                    children=[
+                        html.Div(
+                            id="covid-stats-container",
+                            children=[
+                                html.H6(
+                                    "Deaths and Cases Over Time",
+                                    id="stats-title",
+                                ),
+                                dcc.Graph(
+                                    id='stats-graph'
+                                ),
+                            ],
+                            className='pretty_container six columns'
+
+                        ),
+                        html.Div(
+                            id="ma-sent-container",
+                            children=[
+                                html.H6(
+                                    "7 Day MA Sentiment vs Tweet Volume",
+                                    id="sent-vol-title",
+                                ),
+                                dcc.Graph(
+                                    id='ma-sent-graph'
+                                ),
+                            ],
+                            className='pretty_container six columns'
+
+                        )
+                    ],
+                    className='row'
+
+                ),
+                html.Div(
 
                     children=[
                         html.H6(
@@ -282,12 +334,15 @@ app.layout = html.Div(
                                         "label": "COVID Sentiment vs Time",
                                         "value": "show_sentiment_vs_time",
                                     },
+                                    {
+                                        'label': 'COVID'
+                                    }
                                 ],
                                 value="show_death_rate_single_year",
                                 id="chart-dropdown",
                             ),
                             dcc.Graph(
-
+                                id='dropdown-figure'
                             ),
                         ],
                         className='pretty_container twelve columns'
@@ -370,7 +425,7 @@ def update_map_title(selected_date, source):
     [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
 def update_bar_chart(selected_date, source, nlp):
-    data = sentiment_data_sources[source]
+    data = all_sentiment_data_sources[source]
     data['date'] = pd.to_datetime(data['date']).dt.date
     df = data[data['date'] == dates_list[selected_date]]
     label = sentiment_dropdown_value_to_labels[nlp]
@@ -409,12 +464,26 @@ def update_hashtag_table(selected_date, source):
 
 
 @app.callback(
-    Output("county-choropleth", "figure"),
-    [Input("days-slider", "value")],
+    Output('days-slider', 'value'),
+    [Input('auto-stepper', 'n_intervals')]
 )
-def display_map(day):
-    uk_counties = json.load(open('data/Geojson/uk_counties_simpler.json', 'r'))
-    geo_df = pd.read_csv('data/covid/county_daily_sentiment.csv')
+def play(n_clicks):
+    if n_clicks is None:
+        return 0
+    else:
+        return n_clicks + 1
+
+
+@app.callback(
+    Output("county-choropleth", "figure"),
+    [Input("days-slider", "value"), Input("region-dropdown", "value"), Input("nlp-dropdown", "value"),
+     Input("source-dropdown", "value")
+
+     ]
+)
+def display_map(day, region, nlp, topic):
+    geo_df = geo_df_data_sources[topic]
+    color = sentiment_dropdown_value_to_score[nlp]
     # Initial map
     date = str(dates_list[day].date())
     geo_df = geo_df.loc[geo_df['date'] == date]
@@ -423,7 +492,7 @@ def display_map(day):
         locations="id",
         featureidkey='properties.id',
         geojson=uk_counties,
-        color='sentiment',
+        color=color,
         hover_name='county',
         mapbox_style='white-bg',
         color_continuous_scale=px.colors.diverging.Temps_r,
@@ -432,6 +501,76 @@ def display_map(day):
         animation_frame='date',
         range_color=[-1, 1],
     )
+    return fig
+
+
+@app.callback(
+    Output("stats-graph", "figure"),
+    [Input("days-slider", "value")
+     ]
+)
+def display_stats(day):
+    fig = make_subplots(rows=2, cols=2,
+                        specs=[[{"secondary_y": True},
+                                {"secondary_y": True}], [{"secondary_y": True},
+                                                         {"secondary_y": True}]],
+                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.3,
+                        horizontal_spacing=0.2)
+    df = format_df_ma_stats(df_covid_stats, countries, start_global, str(dates_list[day].date()))
+    for i, country in enumerate(countries):
+        case_trace, death_trace = plot_covid_stats(df, events_array, country)
+        row, col = int((i / 2) + 1), (i % 2) + 1
+        fig.add_trace(case_trace, secondary_y=False, row=row, col=col)
+        fig.add_trace(death_trace, secondary_y=True, row=row, col=col)
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1), height=600, width=1400)
+    fig.update_xaxes(title_text="Date")
+    fig.update_yaxes(title_text="Covid Cases", secondary_y=False)
+    fig.update_yaxes(title_text="Covid Deaths", secondary_y=True)
+    return fig
+
+
+@app.callback(
+    Output('ma-sent-graph', 'figure'),
+    [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+)
+def display_ma_sentiment(day, topic, sentiment_type):
+    actual_date = str(dates_list[day].date())
+    sentiment_col = sentiment_dropdown_value_to_score[sentiment_type]
+    sentiment_data = all_sentiment_data_sources[topic]
+    agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
+                                                          actual_date)
+    df_sent, df_vol = format_df_ma_sent(agg_data, sentiment_dropdown_value_to_score[sentiment_type], start_global,
+                                        actual_date), \
+                      format_df_ma_tweet_vol(
+                          tweet_counts_sources[topic],
+                          countries,
+                          start_global, actual_date)
+    fig = make_subplots(rows=2, cols=2,
+                        specs=[[{"secondary_y": True},
+                                {"secondary_y": True}], [{"secondary_y": True},
+                                                         {"secondary_y": True}]],
+                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.3,
+                        horizontal_spacing=0.2)
+    for i, country in enumerate(countries):
+        sent_trace, vol_trace = plot_sentiment_vs_volume(df_sent, df_vol, sentiment_col, events_array, country)
+        row, col = int((i / 2) + 1), (i % 2) + 1
+        fig.add_trace(sent_trace, secondary_y=False, row=row, col=col)
+        fig.add_trace(vol_trace, secondary_y=True, row=row, col=col)
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1), height=600, width=1400)
+    fig.update_xaxes(title_text="Date")
+    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False)
+    fig.update_yaxes(title_text="Tweet Volume", secondary_y=True)
+
     return fig
 
 
