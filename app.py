@@ -4,7 +4,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 import pandas as pd
-import plotly.graph_objects as go
 import json
 from dash.dependencies import Input, Output
 from utils.plotting import create_event_array, plot_covid_stats, format_df_ma_stats, format_df_ma_sent, \
@@ -13,7 +12,9 @@ from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from plotly.subplots import make_subplots
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, meta_tags=[
+    {"name": "viewport", "content": "width=device-width, initial-scale=1"}
+])
 server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
 
@@ -35,11 +36,11 @@ geo_df_data_sources = {'covid': pd.read_csv('data/covid/daily_sentiment_county_u
 all_sentiment_data_sources = {'covid': all_covid,
                               'lockdown': all_lockdown}
 sentiment_dropdown_value_to_avg_score = {'nn': 'nn-predictions_avg_score', 'textblob': 'textblob-predictions_avg_score',
-                                     'vader': 'vader-predictions_avg_score'}
+                                         'vader': 'vader-predictions_avg_score'}
 sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-score',
                                      'vader': 'vader-score'}
 sentiment_dropdown_value_to_predictions = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
-                                      'vader': 'vader-predictions'}
+                                           'vader': 'vader-predictions'}
 tweet_counts_sources = {'covid': pd.read_csv('data/covid/daily_tweet_count_country.csv'),
                         'lockdown': pd.read_csv('data/lockdown/daily_tweet_count_country.csv')}
 regions_lists = {'county': counties, 'country': countries}
@@ -444,32 +445,32 @@ def update_bar_chart(selected_date, source, nlp):
     fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
     return fig
 
+#
+# @app.callback(
+#     Output('hashtags_table', 'children'),
+#     [Input("days-slider", "value"), Input('source-dropdown', 'value')]
+# )
+# def update_hashtag_table(selected_date, source):
+#     selected_date = str(dates_list[selected_date].date())
+#     hashtags_df = hashtag_data_sources[source]
+#     hashtag_date = hashtags_df.loc[hashtags_df['date'] == selected_date]
+#     hashtags = [tuple(x.split(',')) for x in re.findall("\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
+#     hash_dict = {'Hashtag': [], 'Count': []}
+#     for hashtag, count in hashtags:
+#         hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
+#         hash_dict['Count'].append(count)
+#     return df_to_table(pd.DataFrame(hash_dict))
 
-@app.callback(
-    Output('hashtags_table', 'children'),
-    [Input("days-slider", "value"), Input('source-dropdown', 'value')]
-)
-def update_hashtag_table(selected_date, source):
-    selected_date = str(dates_list[selected_date].date())
-    hashtags_df = hashtag_data_sources[source]
-    hashtag_date = hashtags_df.loc[hashtags_df['date'] == selected_date]
-    hashtags = [tuple(x.split(',')) for x in re.findall("\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
-    hash_dict = {'Hashtag': [], 'Count': []}
-    for hashtag, count in hashtags:
-        hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
-        hash_dict['Count'].append(count)
-    return df_to_table(pd.DataFrame(hash_dict))
 
-
-@app.callback(
-    Output('days-slider', 'value'),
-    [Input('auto-stepper', 'n_intervals')]
-)
-def play(n_clicks):
-    if n_clicks is None:
-        return 0
-    else:
-        return n_clicks + 1
+# @app.callback(
+#     Output('days-slider', 'value'),
+#     [Input('auto-stepper', 'n_intervals')]
+# )
+# def play(n_clicks):
+#     if n_clicks is None:
+#         return 0
+#     else:
+#         return n_clicks + 1
 
 
 @app.callback(
@@ -564,7 +565,7 @@ def display_ma_sentiment(day, topic, sentiment_type):
         yanchor="bottom",
         y=1.02,
         xanchor="right",
-        x=1), height=600, width=1400)
+        x=1), height=600, width=1200)
     fig.update_xaxes(title_text="Date")
     fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False)
     fig.update_yaxes(title_text="Tweet Volume", secondary_y=True)

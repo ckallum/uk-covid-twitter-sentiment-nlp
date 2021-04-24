@@ -34,7 +34,7 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
             for i, prediction_version in enumerate(score_columns):
                 if not region_data.empty:
                     score_by_region[prediction_version].append(
-                    region_data[prediction_version].mean())
+                        region_data[prediction_version].mean())
     full_data = pd.concat(
         [pd.DataFrame({'date': dates}), pd.DataFrame({'region_name': regions}),
          pd.DataFrame(score_by_region)], axis=1)

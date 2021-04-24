@@ -35,8 +35,12 @@ def format_df_ma_sent(data, sentiment_col, start, end):
     region_df_sent_dict = {}
     for region in data['region_name'].unique():
         temp_sent = data.loc[data['region_name'] == region]  # Splitting DF into countries
-        temp_sent.loc[:, sentiment_col] = temp_sent.loc[:, sentiment_col].rolling(
-            window=MA_win).mean().dropna()  # 7 Day MA
+        if len(temp_sent.index) < 7:
+            temp_sent.loc[:, sentiment_col] = temp_sent.loc[:, sentiment_col].rolling(
+                window=len(temp_sent.index)).mean().dropna()  # 7 Day MA
+        else:
+            temp_sent.loc[:, sentiment_col] = temp_sent.loc[:, sentiment_col].rolling(
+                window=MA_win).mean().dropna()  # 7 Day MA
         region_df_sent_dict[region] = temp_sent.dropna()
     return region_df_sent_dict
 
@@ -46,8 +50,12 @@ def format_df_ma_stats(data, region_list, start, end):
     region_df_stats_dict = {}
     for region in region_list:
         temp_stats = data.loc[data['country'] == region]
-        temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
-            window=MA_win).mean().dropna()
+        if len(temp_stats.index) < 7:
+            temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
+                window=len(temp_stats.index)).mean().dropna()  # 7 Day MA
+        else:
+            temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
+                window=MA_win).mean().dropna()
         region_df_stats_dict[region] = temp_stats.dropna()
     return region_df_stats_dict
 
@@ -55,7 +63,10 @@ def format_df_ma_stats(data, region_list, start, end):
 def format_df_ma_tweet_vol(df, region_list, start, end):
     data = select_df_between_dates(df, start, end)
     for region in region_list:
-        data.loc[:, region] = data.loc[:, region].rolling(window=MA_win).mean().dropna()
+        if len(data.index) < 7:
+            data.loc[:, region] = data.loc[:, region].rolling(window=len(data.index)).mean().dropna()
+        else:
+            data.loc[:, region] = data.loc[:, region].rolling(window=MA_win).mean().dropna()
     return data
 
 
@@ -64,7 +75,8 @@ def plot_sentiment_vs_volume(df_sent, df_num_tweets, sentiment_type, events, cou
                             name="{} 7 Day MA: Sentiment".format(country), text=events, textposition="bottom center")
 
     vol_trace = go.Scatter(x=df_num_tweets['date'], y=df_num_tweets[country],
-                           name="{} 7 Day MA: Number of Tweets".format(country), text=events, textposition="bottom center")
+                           name="{} 7 Day MA: Number of Tweets".format(country), text=events,
+                           textposition="bottom center")
     return sent_trace, vol_trace
 
 
