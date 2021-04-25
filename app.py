@@ -6,7 +6,8 @@ import plotly.express as px
 import pandas as pd
 import json
 from dash.dependencies import Input, Output
-from utils.plotting import create_event_array, plot_covid_stats, plot_hashtag_table, plot_sentiment_vs_volume
+from utils.plotting import create_event_array, plot_animated_sent, plot_covid_stats, plot_hashtag_table, \
+    plot_sentiment_vs_volume
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from plotly.subplots import make_subplots
 
@@ -529,6 +530,21 @@ def display_news(day):
         '''
         links = links + blank + link
     return (links)
+
+
+@app.callback(
+    Output('dropdown-figure', 'figure'),
+    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+)
+def animated_chart(topic, sentiment_type):
+    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+    sentiment_data = geo_df_data_sources[topic]
+    agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
+                                                          end_global)
+    tweet_count_df = tweet_counts_sources[topic]
+
+    return plot_animated_sent(agg_data, tweet_count_df, sentiment_col, countries, events_array, start_global,
+                              end_global)
 
 
 if __name__ == '__main__':

@@ -162,8 +162,137 @@ def plot_hashtag_table(df):
                 fill_color='paleturquoise',
             ),
             columnwidth=[300, 80],
-            cells=dict(values=[df.Hashtag, df.Count], align='left',height=40)
+            cells=dict(values=[df.Hashtag, df.Count], align='left', height=40)
         )
     ])
     fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20))
     return fig
+
+
+def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, events, start, end):
+    dates_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
+
+    fig_2 = go.Figure(frames=[go.Frame(data=[
+        get_sent_vol_traces(
+            format_df_ma_sent(agg_data, sentiment_column, start, date),
+            format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                   date),
+            sentiment_column, events,
+            'England')[0],
+
+        get_sent_vol_traces(
+            format_df_ma_sent(agg_data, sentiment_column, start, date),
+            format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                   date),
+            sentiment_column, events,
+            'Scotland')[0],
+        get_sent_vol_traces(
+            format_df_ma_sent(agg_data, sentiment_column, start, date),
+            format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                   date),
+            sentiment_column, events,
+            'Northern Ireland')[0],
+        get_sent_vol_traces(
+            format_df_ma_sent(agg_data, sentiment_column, start, date),
+            format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                   date),
+            sentiment_column, events,
+            'Wales')[0],
+
+    ],
+
+        name=str(i)  # you need to name the frame for the animation to behave properly
+    )
+        for i, date in enumerate(dates_list)]
+    )
+
+    fig_2.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'England')[0])
+
+    fig_2.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'Scotland')[0]
+                    )
+
+    fig_2.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'Northern Ireland')[0]
+                    )
+
+    fig_2.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'Wales')[0]
+                    )
+    sliders = [
+        {
+            "pad": {"b": 10, "t": 60},
+            "len": 0.9,
+            "x": 0.1,
+            "y": 0,
+            "steps": [
+                {
+                    "args": [[f.name], frame_args(0), {'frame': {'duration': 300, 'redraw': False},
+                                                       'mode': 'immediate', 'transition': {'duration': 300}}],
+                    "label": str(k),
+                    "method": "animate",
+                }
+                for k, f in enumerate(fig_2.frames)
+            ],
+        }
+    ]
+    fig_2.update_layout(
+        title='7 Day Moving Average of Tweet Sentiment for Each Country',
+        height=600,
+        autosize=True,
+        scene=dict(
+            yaxis=dict(range=[0.55, -0.55], autorange=False),
+            aspectratio=dict(x=1, y=1, z=1),
+        ),
+        updatemenus=[
+            {
+                "buttons": [
+                    {
+                        "args": [None, frame_args(50)],
+                        "label": "&#9654;",  # play symbol
+                        "method": "animate",
+                    },
+                    {
+                        "args": [[None], frame_args(0)],
+                        "label": "&#9724;",  # pause symbol
+                        "method": "animate",
+                    },
+                ],
+                "direction": "left",
+                "pad": {"r": 10, "t": 70},
+                "type": "buttons",
+                "x": 0.1,
+                "y": 0,
+            }
+        ],
+        sliders=sliders,
+        yaxis_range=[-0.45, 0.45]
+
+    )
+    return fig_2
+
+
+def frame_args(duration):
+    return {
+        "frame": {"duration": duration},
+        "mode": "immediate",
+        "fromcurrent": True,
+        "transition": {"duration": duration, "easing": "linear"},
+    }
