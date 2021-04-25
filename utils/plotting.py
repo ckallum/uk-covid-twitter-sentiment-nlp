@@ -146,7 +146,7 @@ def plot_covid_stats(data, countries, events, start, end):
         yanchor="bottom",
         y=1.05,
         xanchor="right",
-        x=0.88), height=750, autosize=True)
+        x=1), height=750, autosize=True)
     fig.update_xaxes(title_text="Date", showgrid=False)
     fig.update_yaxes(title_text="Covid Cases", secondary_y=False, showgrid=False)
     fig.update_yaxes(title_text="Covid Deaths", secondary_y=True, showgrid=False)
@@ -283,7 +283,9 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
             }
         ],
         sliders=sliders,
-        yaxis_range=[-0.45, 0.45]
+        yaxis_range=[-0.45, 0.45],
+        xaxis_title='Date',
+        yaxis_title='7 Day MA Sentiment'
 
     )
     return fig_2
