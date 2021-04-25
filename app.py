@@ -326,10 +326,6 @@ app.layout = html.Div(
                             dcc.Dropdown(
                                 options=[
                                     {
-                                        "label": "Moving Average",
-                                        "value": "show_moving_average",
-                                    },
-                                    {
                                         "label": "Emoji Sentiment",
                                         "value": "show_emoji_sentiment",
                                     },
@@ -338,10 +334,11 @@ app.layout = html.Div(
                                         "value": "show_sentiment_vs_time",
                                     },
                                     {
-                                        'label': 'COVID'
+                                        'label': 'COVID Death Rate and Cases',
+                                        'value':'show_covid_stats'
                                     }
                                 ],
-                                value="show_death_rate_single_year",
+                                value="show_sentiment_vs_time",
                                 id="chart-dropdown",
                             ),
                             dcc.Graph(
@@ -539,14 +536,15 @@ def display_news(day):
 
 @app.callback(
     Output('dropdown-figure', 'figure'),
-    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'),  Input('chart-dropdown', 'value')]
 )
-def animated_chart(topic, sentiment_type):
+def animated_chart(topic, sentiment_type, chart_value):
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     sentiment_data = geo_df_data_sources[topic]
     agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
                                                           end_global)
     tweet_count_df = tweet_counts_sources[topic]
+
 
     return plot_animated_sent(agg_data, tweet_count_df, sentiment_col, countries, events_array, start_global,
                               end_global)

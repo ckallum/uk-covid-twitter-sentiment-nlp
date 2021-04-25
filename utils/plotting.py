@@ -172,7 +172,7 @@ def plot_hashtag_table(df):
 def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, events, start, end):
     dates_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
 
-    fig_2 = go.Figure(frames=[go.Frame(data=[
+    fig = go.Figure(frames=[go.Frame(data=[
         get_sent_vol_traces(
             format_df_ma_sent(agg_data, sentiment_column, start, date),
             format_df_ma_tweet_vol(tweet_count_data, countries, start,
@@ -200,20 +200,19 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
             'Wales')[0],
 
     ],
-
         name=str(i)  # you need to name the frame for the animation to behave properly
     )
         for i, date in enumerate(dates_list)]
     )
 
-    fig_2.add_trace(get_sent_vol_traces(
+    fig.add_trace(get_sent_vol_traces(
         format_df_ma_sent(agg_data, sentiment_column, start, start),
         format_df_ma_tweet_vol(tweet_count_data, countries, start,
                                start),
         sentiment_column, events,
         'England')[0])
 
-    fig_2.add_trace(get_sent_vol_traces(
+    fig.add_trace(get_sent_vol_traces(
         format_df_ma_sent(agg_data, sentiment_column, start, start),
         format_df_ma_tweet_vol(tweet_count_data, countries, start,
                                start),
@@ -221,7 +220,7 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
         'Scotland')[0]
                     )
 
-    fig_2.add_trace(get_sent_vol_traces(
+    fig.add_trace(get_sent_vol_traces(
         format_df_ma_sent(agg_data, sentiment_column, start, start),
         format_df_ma_tweet_vol(tweet_count_data, countries, start,
                                start),
@@ -229,7 +228,7 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
         'Northern Ireland')[0]
                     )
 
-    fig_2.add_trace(get_sent_vol_traces(
+    fig.add_trace(get_sent_vol_traces(
         format_df_ma_sent(agg_data, sentiment_column, start, start),
         format_df_ma_tweet_vol(tweet_count_data, countries, start,
                                start),
@@ -249,11 +248,11 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
                     "label": str(k),
                     "method": "animate",
                 }
-                for k, f in enumerate(fig_2.frames)
+                for k, f in enumerate(fig.frames)
             ],
         }
     ]
-    fig_2.update_layout(
+    fig.update_layout(
         title='7 Day Moving Average of Tweet Sentiment for Each Country',
         height=600,
         autosize=True,
@@ -288,7 +287,159 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
         yaxis_title='7 Day MA Sentiment'
 
     )
-    return fig_2
+    return fig
+
+
+def test_sublot_animation(agg_data, tweet_count_data, sentiment_column, countries, events, start, end):
+    dates_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
+    fig = make_subplots(rows=1, cols=1, specs=[[{'secondary_y': True}]])
+    fig.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'England')[0], secondary_y=True)
+
+    fig.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'Scotland')[0]
+                  , secondary_y=True)
+
+    fig.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'Northern Ireland')[0]
+                  , secondary_y=True)
+
+    fig.add_trace(get_sent_vol_traces(
+        format_df_ma_sent(agg_data, sentiment_column, start, start),
+        format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                               start),
+        sentiment_column, events,
+        'Wales')[0]
+                  , secondary_y=True)
+
+    frames = [dict(name=str(i),
+                   data=[get_sent_vol_traces(
+                       format_df_ma_sent(agg_data, sentiment_column, start, date),
+                       format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                              date),
+                       sentiment_column, events,
+                       'England')[0],
+
+                         get_sent_vol_traces(
+                             format_df_ma_sent(agg_data, sentiment_column, start, date),
+                             format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                                    date),
+                             sentiment_column, events,
+                             'Scotland')[0],
+                         get_sent_vol_traces(
+                             format_df_ma_sent(agg_data, sentiment_column, start, date),
+                             format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                                    date),
+                             sentiment_column, events,
+                             'Northern Ireland')[0],
+                         get_sent_vol_traces(
+                             format_df_ma_sent(agg_data, sentiment_column, start, date),
+                             format_df_ma_tweet_vol(tweet_count_data, countries, start,
+                                                    date),
+                             sentiment_column, events,
+                             'Wales')[0],
+                         ],
+                   traces=[0, 1, 2, 3])
+
+              for i, date in enumerate(dates_list)
+              ]
+    fig.update(frames=frames)
+    #
+    # fig_2 = go.Figure(frames=[go.Frame(data=[
+    #     get_sent_vol_traces(
+    #         format_df_ma_sent(agg_data, sentiment_column, start, date),
+    #         format_df_ma_tweet_vol(tweet_count_data, countries, start,
+    #                                date),
+    #         sentiment_column, events,
+    #         'England')[0],
+    #
+    #     get_sent_vol_traces(
+    #         format_df_ma_sent(agg_data, sentiment_column, start, date),
+    #         format_df_ma_tweet_vol(tweet_count_data, countries, start,
+    #                                date),
+    #         sentiment_column, events,
+    #         'Scotland')[0],
+    #     get_sent_vol_traces(
+    #         format_df_ma_sent(agg_data, sentiment_column, start, date),
+    #         format_df_ma_tweet_vol(tweet_count_data, countries, start,
+    #                                date),
+    #         sentiment_column, events,
+    #         'Northern Ireland')[0],
+    #     get_sent_vol_traces(
+    #         format_df_ma_sent(agg_data, sentiment_column, start, date),
+    #         format_df_ma_tweet_vol(tweet_count_data, countries, start,
+    #                                date),
+    #         sentiment_column, events,
+    #         'Wales')[0],
+    #
+    # ],
+    #     name=str(i)  # you need to name the frame for the animation to behave properly
+    # )
+    #     for i, date in enumerate(dates_list)]
+    # )
+    sliders = [
+        {
+            "pad": {"b": 10, "t": 60},
+            "len": 0.9,
+            "x": 0.1,
+            "y": 0,
+            "steps": [
+                {
+                    "args": [[f.name], frame_args(0), {'frame': {'duration': 300, 'redraw': False},
+                                                       'mode': 'immediate', 'transition': {'duration': 300}}],
+                    "label": str(k),
+                    "method": "animate",
+                }
+                for k, f in enumerate(fig.frames)
+            ],
+        }
+    ]
+    fig.update_layout(
+        title='7 Day Moving Average of Tweet Sentiment for Each Country',
+        height=600,
+        autosize=True,
+        scene=dict(
+            yaxis=dict(range=[0.55, -0.55], autorange=False),
+            aspectratio=dict(x=1, y=1, z=1),
+        ),
+        updatemenus=[
+            {
+                "buttons": [
+                    {
+                        "args": [None, frame_args(50)],
+                        "label": "&#9654;",  # play symbol
+                        "method": "animate",
+                    },
+                    {
+                        "args": [[None], frame_args(0)],
+                        "label": "&#9724;",  # pause symbol
+                        "method": "animate",
+                    },
+                ],
+                "direction": "left",
+                "pad": {"r": 10, "t": 70},
+                "type": "buttons",
+                "x": 0.1,
+                "y": 0,
+            }
+        ],
+        sliders=sliders,
+        yaxis_range=[-0.45, 0.45],
+        xaxis_title='Date',
+        yaxis_title='7 Day MA Sentiment'
+    )
 
 
 def frame_args(duration):
