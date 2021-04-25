@@ -39,3 +39,7 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
         [pd.DataFrame({'date': dates}), pd.DataFrame({'region_name': regions}),
          pd.DataFrame(score_by_region)], axis=1)
     return full_data
+
+
+def aggregate_all_cases_over_time(data):
+    pass

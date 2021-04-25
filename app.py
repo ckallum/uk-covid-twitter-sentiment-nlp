@@ -8,12 +8,12 @@ import json
 from dash.dependencies import Input, Output
 from utils.plotting import create_event_array, plot_animated_sent, plot_covid_stats, plot_hashtag_table, \
     plot_sentiment_vs_volume
-from utils.aggregations import aggregate_sentiment_by_region_type_by_date
+from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
 from plotly.subplots import make_subplots
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-# , meta_tags=[ {"name": "viewport", "content": "width=device-width, initial-scale=1"}]
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
+                meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}])
 
 server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
@@ -32,7 +32,7 @@ hashtags_lockdown = pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')
 geo_df_covid = pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv')
 geo_df_lockdown = pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')
 tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
-tweet_count_lockdown= pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
+tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
 # Data Sources
 hashtag_data_sources = {'covid': hashtags_covid,
                         'lockdown': hashtags_lockdown}
@@ -47,7 +47,7 @@ sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-sco
                                      'vader': 'vader-score'}
 sentiment_dropdown_value_to_predictions = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
                                            'vader': 'vader-predictions'}
-tweet_counts_sources = {'covid':tweet_count_covid,
+tweet_counts_sources = {'covid': tweet_count_covid,
                         'lockdown': tweet_count_lockdown}
 regions_lists = {'county': counties, 'country': countries}
 
@@ -334,9 +334,17 @@ app.layout = html.Div(
                                         "value": "show_sentiment_vs_time",
                                     },
                                     {
-                                        'label': 'COVID Death Rate and Cases',
-                                        'value':'show_covid_stats'
-                                    }
+                                        "label": "Popular Hashtags vs Time",
+                                        "value": "show_hashtags_vs_time",
+                                    },
+                                    {
+                                        "label": "Hashtags vs Sentiment",
+                                        "value": "show_hashtags_vs_sentiment",
+                                    },
+                                    {
+                                        "label": "Sentiment vs Cases",
+                                        "value": "show_cases_vs_sentiment",
+                                    },
                                 ],
                                 value="show_sentiment_vs_time",
                                 id="chart-dropdown",
@@ -349,10 +357,45 @@ app.layout = html.Div(
                     ),
                 ],
                     className='row'
+                ),
+                html.Div(
+                    children=[
+                        html.Div(
+                            id="analysis-header",
+                            children=[
+                                html.H2(
+                                    children='Data Analysis and Exploration'
+                                ),
+                            ],
+                            className='pretty_container twelve columns'
+                        )
+                    ],
+                    className='row'
+                ),
+                html.Div(
+                    children=[
+                        html.Div(
+                            children=[
+                                html.H4(
+                                    children='Sentiment vs Tweet Volume'
+                                ),
+                            ],
+                            className='pretty_container six columns'
+                        ),
+                        html.Div(
+                            children=[
+                                html.H4(
+                                    children='Correlation Between Features'
+                                ),
+                            ],
+                            className='pretty_container six columns'
+                        )
+                    ],
+                    className='row'
                 )
-            ],
-        ),
-    ],
+            ]
+        )
+    ]
 )
 
 
@@ -536,7 +579,7 @@ def display_news(day):
 
 @app.callback(
     Output('dropdown-figure', 'figure'),
-    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'),  Input('chart-dropdown', 'value')]
+    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'), Input('chart-dropdown', 'value')]
 )
 def animated_chart(topic, sentiment_type, chart_value):
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
@@ -544,10 +587,16 @@ def animated_chart(topic, sentiment_type, chart_value):
     agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
                                                           end_global)
     tweet_count_df = tweet_counts_sources[topic]
+    # "value": "show_emoji_sentiment"
+    # "value": "show_hashtags_vs_time"
+    # "value": "show_hashtags_vs_sentiment"
 
-
-    return plot_animated_sent(agg_data, tweet_count_df, sentiment_col, countries, events_array, start_global,
-                              end_global)
+    # "value": "show_cases_vs_sentiment"
+    if chart_value == 'show_sentiment_vs_time':
+        return plot_animated_sent(agg_data, tweet_count_df, sentiment_col, countries, events_array, start_global,
+                                  end_global)
+    else:
+        return None
 
 
 if __name__ == '__main__':

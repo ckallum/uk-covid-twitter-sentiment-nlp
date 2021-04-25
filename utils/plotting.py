@@ -218,7 +218,7 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
                                start),
         sentiment_column, events,
         'Scotland')[0]
-                    )
+                  )
 
     fig.add_trace(get_sent_vol_traces(
         format_df_ma_sent(agg_data, sentiment_column, start, start),
@@ -226,7 +226,7 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
                                start),
         sentiment_column, events,
         'Northern Ireland')[0]
-                    )
+                  )
 
     fig.add_trace(get_sent_vol_traces(
         format_df_ma_sent(agg_data, sentiment_column, start, start),
@@ -234,7 +234,7 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
                                start),
         sentiment_column, events,
         'Wales')[0]
-                    )
+                  )
     sliders = [
         {
             "pad": {"b": 10, "t": 60},
