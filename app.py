@@ -27,12 +27,17 @@ countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
 all_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
-
+hashtags_covid = pd.read_csv('data/covid/top_ten_hashtags_per_day.csv')
+hashtags_lockdown = pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')
+geo_df_covid = pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv')
+geo_df_lockdown = pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')
+tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
+tweet_count_lockdown= pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
 # Data Sources
-hashtag_data_sources = {'covid': pd.read_csv('data/covid/top_ten_hashtags_per_day.csv'),
-                        'lockdown': pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')}
-geo_df_data_sources = {'covid': pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv'),
-                       'lockdown': pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')}
+hashtag_data_sources = {'covid': hashtags_covid,
+                        'lockdown': hashtags_lockdown}
+geo_df_data_sources = {'covid': geo_df_covid,
+                       'lockdown': geo_df_lockdown}
 
 all_sentiment_data_sources = {'covid': all_covid,
                               'lockdown': all_lockdown}
@@ -42,8 +47,8 @@ sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-sco
                                      'vader': 'vader-score'}
 sentiment_dropdown_value_to_predictions = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
                                            'vader': 'vader-predictions'}
-tweet_counts_sources = {'covid': pd.read_csv('data/covid/daily_tweet_count_country.csv'),
-                        'lockdown': pd.read_csv('data/lockdown/daily_tweet_count_country.csv')}
+tweet_counts_sources = {'covid':tweet_count_covid,
+                        'lockdown': tweet_count_lockdown}
 regions_lists = {'county': counties, 'country': countries}
 
 # Dates
@@ -500,14 +505,14 @@ def display_stats(day):
     [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
 def display_sentiment_vs_vol(day, topic, sentiment_type):
-    actual_date = str(dates_list[day].date())
+    selected_date = str(dates_list[day].date())
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     sentiment_data = geo_df_data_sources[topic]
     agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
-                                                          actual_date)
+                                                          selected_date)
     tweet_count_df = tweet_counts_sources[topic]
     return plot_sentiment_vs_volume(agg_data, tweet_count_df, sentiment_col, events_array, countries, start_global,
-                                    actual_date)
+                                    selected_date)
 
 
 @app.callback(

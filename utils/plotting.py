@@ -53,7 +53,7 @@ def format_df_ma_stats(data, region_list, start, end):
         temp_stats = data.loc[data['country'] == region]
         if len(temp_stats.index) < 7:
             temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
-                window=len(data.index)).mean().dropna()  # 7 Day MA
+                window=1).mean().dropna()  # 7 Day MA
         else:
             temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
                 window=MA_win).mean().dropna()
