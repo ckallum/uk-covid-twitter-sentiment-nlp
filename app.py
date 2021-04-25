@@ -12,9 +12,9 @@ from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from plotly.subplots import make_subplots
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets, meta_tags=[
-    {"name": "viewport", "content": "width=device-width, initial-scale=1"}
-])
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# , meta_tags=[ {"name": "viewport", "content": "width=device-width, initial-scale=1"}]
+
 server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
 
@@ -133,19 +133,6 @@ def filters():
     return html.Div(
         [
             html.Div(children=[
-                html.P(id='region-selected', children='Select Region Grouping'),
-                dcc.Dropdown(
-                    id="region-dropdown",
-                    options=[
-                        {"label": "Counties", "value": "county"},
-                        {"label": "Countries", "value": "country"}
-                    ],
-                    value="counties",
-                    clearable=False,
-                )],
-                className="pretty_container three columns",
-            ),
-            html.Div(children=[
                 html.P(id='data-selected', children='Select Tweet Data-set '),
                 dcc.Dropdown(
                     id="source-dropdown",
@@ -193,12 +180,23 @@ app.layout = html.Div(
         html.Div(
             id="app-container",
             children=[
-                # dcc.Interval(id='auto-stepper',
-                #              interval=0,  # in milliseconds
-                #              n_intervals=0),
                 html.Div(children=[
                     filters(),
                     covid_stats_indicators()],
+                    className='row'),
+                html.Div(children=[
+                    html.Div(
+                        id='button-container',
+                        children=[
+                            html.Button(
+                                'Previous Date', id='prev-button', n_clicks=0
+                            ),
+                            html.Button(
+                                'Next Date', id='next-button', n_clicks=0
+                            )
+                        ]
+                    )
+                ],
                     className='row'),
                 html.Div(children=[
                     html.Div(
@@ -299,7 +297,8 @@ app.layout = html.Div(
 
                         )
                     ],
-                    className='row'
+                    className='row',
+                    style={'height': '850px'}
 
                 ),
                 html.Div(
@@ -446,6 +445,7 @@ def update_bar_chart(selected_date, source, nlp):
     fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
     return fig
 
+
 #
 # @app.callback(
 #     Output('hashtags_table', 'children'),
@@ -463,25 +463,43 @@ def update_bar_chart(selected_date, source, nlp):
 #     return df_to_table(pd.DataFrame(hash_dict))
 
 
-# @app.callback(
+@app.callback(
+    Output('days-slider', 'value'),
+    [Input('next-button', 'n_clicks'), Input('prev-button', 'n_clicks'), Input('days-slider', 'value')]
+)
+def button_pressed(inc_btn, dec_btn, day):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if 'next-button' in changed_id:
+        if day < 364:
+            return day + 1
+    if 'prev-button' in changed_id:
+        if day > 0:
+            return day - 1
+    return day
+
+    # @app.callback(
+
+
 #     Output('days-slider', 'value'),
-#     [Input('auto-stepper', 'n_intervals')]
+#     [Input('prev-button', 'n_clicks'),  Input('days-slider', 'value')]
 # )
-# def play(n_clicks):
+# def prev_date(n_clicks, day):
 #     if n_clicks is None:
 #         return 0
 #     else:
-#         return n_clicks + 1
+#         if day > 0:
+#             return day-1
+#     return day
 
 
 @app.callback(
     Output("county-choropleth", "figure"),
-    [Input("days-slider", "value"), Input("region-dropdown", "value"), Input("nlp-dropdown", "value"),
+    [Input("days-slider", "value"),Input("nlp-dropdown", "value"),
      Input("source-dropdown", "value")
 
      ]
 )
-def display_map(day, region, nlp, topic):
+def display_map(day, nlp, topic):
     geo_df = geo_df_data_sources[topic]
     color = sentiment_dropdown_value_to_avg_score[nlp]
     # Initial map
@@ -501,6 +519,7 @@ def display_map(day, region, nlp, topic):
         animation_frame='date',
         range_color=[-1, 1],
     )
+    fig.update_layout(autosize=True)
     return fig
 
 
@@ -514,8 +533,8 @@ def display_stats(day):
                         specs=[[{"secondary_y": True},
                                 {"secondary_y": True}], [{"secondary_y": True},
                                                          {"secondary_y": True}]],
-                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.3,
-                        horizontal_spacing=0.2)
+                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.25,
+                        horizontal_spacing=0.3)
     df = format_df_ma_stats(df_covid_stats, countries, start_global, str(dates_list[day].date()))
     for i, country in enumerate(countries):
         case_trace, death_trace = plot_covid_stats(df, events_array, country)
@@ -525,9 +544,9 @@ def display_stats(day):
     fig.update_layout(legend=dict(
         orientation="h",
         yanchor="bottom",
-        y=1.02,
+        y=1.05,
         xanchor="right",
-        x=1), height=600, width=1400)
+        x=0.88), height=750, autosize=True )
     fig.update_xaxes(title_text="Date")
     fig.update_yaxes(title_text="Covid Cases", secondary_y=False)
     fig.update_yaxes(title_text="Covid Deaths", secondary_y=True)
@@ -538,7 +557,7 @@ def display_stats(day):
     Output('ma-sent-graph', 'figure'),
     [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
-def display_ma_sentiment(day, topic, sentiment_type):
+def display_sentiment_vs_vol(day, topic, sentiment_type):
     actual_date = str(dates_list[day].date())
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     sentiment_data = geo_df_data_sources[topic]
@@ -554,8 +573,8 @@ def display_ma_sentiment(day, topic, sentiment_type):
                         specs=[[{"secondary_y": True},
                                 {"secondary_y": True}], [{"secondary_y": True},
                                                          {"secondary_y": True}]],
-                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.3,
-                        horizontal_spacing=0.2)
+                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.25,
+                        horizontal_spacing=0.3)
     for i, country in enumerate(countries):
         sent_trace, vol_trace = plot_sentiment_vs_volume(df_sent, df_vol, sentiment_col, events_array, country)
         row, col = int((i / 2) + 1), (i % 2) + 1
@@ -564,9 +583,11 @@ def display_ma_sentiment(day, topic, sentiment_type):
     fig.update_layout(legend=dict(
         orientation="h",
         yanchor="bottom",
-        y=1.02,
+        y=1.05,
         xanchor="right",
-        x=1), height=600, width=1200)
+        x=1,
+        itemsizing='constant'), height=750, autosize=True,
+        margin=dict(l=20, r=20, t=80, b=20),)
     fig.update_xaxes(title_text="Date")
     fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False)
     fig.update_yaxes(title_text="Tweet Volume", secondary_y=True)

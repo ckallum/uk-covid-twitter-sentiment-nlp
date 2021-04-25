@@ -37,7 +37,7 @@ def format_df_ma_sent(data, sentiment_col, start, end):
         temp_sent = data.loc[data['region_name'] == region]  # Splitting DF into countries
         if len(temp_sent.index) < 7:
             temp_sent.loc[:, sentiment_col] = temp_sent.loc[:, sentiment_col].rolling(
-                window=len(temp_sent.index)).mean().dropna()  # 7 Day MA
+                window=1).mean().dropna()  # 7 Day MA
         else:
             temp_sent.loc[:, sentiment_col] = temp_sent.loc[:, sentiment_col].rolling(
                 window=MA_win).mean().dropna()  # 7 Day MA
@@ -52,7 +52,7 @@ def format_df_ma_stats(data, region_list, start, end):
         temp_stats = data.loc[data['country'] == region]
         if len(temp_stats.index) < 7:
             temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
-                window=len(temp_stats.index)).mean().dropna()  # 7 Day MA
+                window=1).mean().dropna()  # 7 Day MA
         else:
             temp_stats.loc[:, [death_str, case_str]] = temp_stats.loc[:, [death_str, case_str]].rolling(
                 window=MA_win).mean().dropna()
@@ -64,7 +64,7 @@ def format_df_ma_tweet_vol(df, region_list, start, end):
     data = select_df_between_dates(df, start, end)
     for region in region_list:
         if len(data.index) < 7:
-            data.loc[:, region] = data.loc[:, region].rolling(window=len(data.index)).mean().dropna()
+            data.loc[:, region] = data.loc[:, region].rolling(window=1).mean().dropna()
         else:
             data.loc[:, region] = data.loc[:, region].rolling(window=MA_win).mean().dropna()
     return data
