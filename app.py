@@ -6,8 +6,7 @@ import plotly.express as px
 import pandas as pd
 import json
 from dash.dependencies import Input, Output
-from utils.plotting import create_event_array, plot_covid_stats, format_df_ma_stats, format_df_ma_sent, \
-    format_df_ma_tweet_vol, plot_sentiment_vs_volume
+from utils.plotting import create_event_array, plot_covid_stats, plot_hashtag_table, plot_sentiment_vs_volume
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from plotly.subplots import make_subplots
 
@@ -72,24 +71,6 @@ fig_0 = px.choropleth_mapbox(
     animation_frame='date',
     range_color=[-1, 1],
 )
-
-
-def df_to_table(df):
-    return html.Table(
-        # Header
-        [html.Tr([html.Th(col) for col in df.columns])] +
-
-        # Body
-        [
-            html.Tr(
-                [
-                    html.Td(df.iloc[i][col])
-                    for col in df.columns
-                ]
-            )
-            for i in range(len(df))
-        ]
-    )
 
 
 def check_between_dates(start, end, current):
@@ -240,7 +221,7 @@ app.layout = html.Div(
                                 ],
                             ),
                         ],
-                        className='pretty_container seven columns'
+                        className='pretty_container five columns'
                     ),
                     html.Div(
                         id='bar_chart_div',
@@ -258,8 +239,25 @@ app.layout = html.Div(
                                 ],
                             ),
                         ],
-                        className='pretty_container five columns'
-                    )
+                        className='pretty_container four columns'
+                    ),
+                    html.Div(
+                        [
+                            html.P(
+                                "Top 10 Hashtags",
+                                style={
+                                    "color": "#2a3f5f",
+                                    "fontSize": "13px",
+                                    "textAlign": "center",
+                                    "marginBottom": "0",
+                                },
+                            ),
+                            dcc.Graph(
+                                id='hashtag-table'
+                            )
+                        ],
+                        className="pretty_container three columns",
+                    ),
 
                 ],
                     className='row'
@@ -346,30 +344,6 @@ app.layout = html.Div(
                         ],
                         className='pretty_container twelve columns'
                     ),
-                    # html.Div(
-                    #     [
-                    #         html.P(
-                    #             "Top 10 Hashtags",
-                    #             style={
-                    #                 "color": "#2a3f5f",
-                    #                 "fontSize": "13px",
-                    #                 "textAlign": "center",
-                    #                 "marginBottom": "0",
-                    #             },
-                    #         ),
-                    #         html.Div(
-                    #             id="hashtags_table",
-                    #             style={"padding": "10px 13px 5px 13px", "marginBottom": "5"},
-                    #         ),
-                    #     ],
-                    #     className="pretty_container three columns",
-                    #     style={
-                    #         "backgroundColor": "white",
-                    #         "border": "1px solid #C8D4E3",
-                    #         "borderRadius": "10px",
-                    #         "height": "100%"
-                    #     },
-                    # ),
                 ],
                     className='row'
                 )
@@ -447,20 +421,21 @@ def update_bar_chart(selected_date, source, nlp):
 
 
 #
-# @app.callback(
-#     Output('hashtags_table', 'children'),
-#     [Input("days-slider", "value"), Input('source-dropdown', 'value')]
-# )
-# def update_hashtag_table(selected_date, source):
-#     selected_date = str(dates_list[selected_date].date())
-#     hashtags_df = hashtag_data_sources[source]
-#     hashtag_date = hashtags_df.loc[hashtags_df['date'] == selected_date]
-#     hashtags = [tuple(x.split(',')) for x in re.findall("\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
-#     hash_dict = {'Hashtag': [], 'Count': []}
-#     for hashtag, count in hashtags:
-#         hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
-#         hash_dict['Count'].append(count)
-#     return df_to_table(pd.DataFrame(hash_dict))
+@app.callback(
+    Output('hashtag-table', 'figure'),
+    [Input("days-slider", "value"), Input('source-dropdown', 'value')]
+)
+def update_hashtag_table(selected_date, source):
+    selected_date = str(dates_list[selected_date].date())
+    hashtags_df = hashtag_data_sources[source]
+    hashtag_date = hashtags_df.loc[hashtags_df['date'] == selected_date]
+    hashtags = [tuple(x.split(',')) for x in re.findall("\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
+    hash_dict = {'Hashtag': [], 'Count': []}
+    for hashtag, count in hashtags:
+        hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
+        hash_dict['Count'].append(count)
+    hash_df = pd.DataFrame(hash_dict)
+    return plot_hashtag_table(hash_df)
 
 
 @app.callback(
@@ -477,24 +452,10 @@ def button_pressed(inc_btn, dec_btn, day):
             return day - 1
     return day
 
-    # @app.callback(
-
-
-#     Output('days-slider', 'value'),
-#     [Input('prev-button', 'n_clicks'),  Input('days-slider', 'value')]
-# )
-# def prev_date(n_clicks, day):
-#     if n_clicks is None:
-#         return 0
-#     else:
-#         if day > 0:
-#             return day-1
-#     return day
-
 
 @app.callback(
     Output("county-choropleth", "figure"),
-    [Input("days-slider", "value"),Input("nlp-dropdown", "value"),
+    [Input("days-slider", "value"), Input("nlp-dropdown", "value"),
      Input("source-dropdown", "value")
 
      ]
@@ -529,28 +490,8 @@ def display_map(day, nlp, topic):
      ]
 )
 def display_stats(day):
-    fig = make_subplots(rows=2, cols=2,
-                        specs=[[{"secondary_y": True},
-                                {"secondary_y": True}], [{"secondary_y": True},
-                                                         {"secondary_y": True}]],
-                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.25,
-                        horizontal_spacing=0.3)
-    df = format_df_ma_stats(df_covid_stats, countries, start_global, str(dates_list[day].date()))
-    for i, country in enumerate(countries):
-        case_trace, death_trace = plot_covid_stats(df, events_array, country)
-        row, col = int((i / 2) + 1), (i % 2) + 1
-        fig.add_trace(case_trace, secondary_y=False, row=row, col=col)
-        fig.add_trace(death_trace, secondary_y=True, row=row, col=col)
-    fig.update_layout(legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.05,
-        xanchor="right",
-        x=0.88), height=750, autosize=True )
-    fig.update_xaxes(title_text="Date")
-    fig.update_yaxes(title_text="Covid Cases", secondary_y=False)
-    fig.update_yaxes(title_text="Covid Deaths", secondary_y=True)
-    return fig
+    today = str(dates_list[day].date())
+    return plot_covid_stats(df_covid_stats, countries, events_array, start_global, today)
 
 
 @app.callback(
@@ -563,36 +504,9 @@ def display_sentiment_vs_vol(day, topic, sentiment_type):
     sentiment_data = geo_df_data_sources[topic]
     agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
                                                           actual_date)
-    df_sent, df_vol = format_df_ma_sent(agg_data, sentiment_dropdown_value_to_avg_score[sentiment_type], start_global,
-                                        actual_date), \
-                      format_df_ma_tweet_vol(
-                          tweet_counts_sources[topic],
-                          countries,
-                          start_global, actual_date)
-    fig = make_subplots(rows=2, cols=2,
-                        specs=[[{"secondary_y": True},
-                                {"secondary_y": True}], [{"secondary_y": True},
-                                                         {"secondary_y": True}]],
-                        subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.25,
-                        horizontal_spacing=0.3)
-    for i, country in enumerate(countries):
-        sent_trace, vol_trace = plot_sentiment_vs_volume(df_sent, df_vol, sentiment_col, events_array, country)
-        row, col = int((i / 2) + 1), (i % 2) + 1
-        fig.add_trace(sent_trace, secondary_y=False, row=row, col=col)
-        fig.add_trace(vol_trace, secondary_y=True, row=row, col=col)
-    fig.update_layout(legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.05,
-        xanchor="right",
-        x=1,
-        itemsizing='constant'), height=750, autosize=True,
-        margin=dict(l=20, r=20, t=80, b=20),)
-    fig.update_xaxes(title_text="Date")
-    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False)
-    fig.update_yaxes(title_text="Tweet Volume", secondary_y=True)
-
-    return fig
+    tweet_count_df = tweet_counts_sources[topic]
+    return plot_sentiment_vs_volume(agg_data, tweet_count_df, sentiment_col, events_array, countries, start_global,
+                                    actual_date)
 
 
 @app.callback(
