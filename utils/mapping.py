@@ -60,25 +60,69 @@ fig.add_trace(plot_covid_stats(
 
 sentiment_data = geo_df_data_sources['lockdown']
 agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
-                                                          end_global)
-fig_2 = go.Figure(frames=[go.Frame(data=
-                                   plot_sentiment_vs_volume(
-                                       format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, date),
-                                       format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
-                                                              date),
-                                       'nn-predictions_avg_score', events_array,
-                                       'England')[0],
-                                   name=str(i)  # you need to name the frame for the animation to behave properly
-                                   )
-                          for i, date in enumerate(dates_list)]
-                  )
+                                                      end_global)
+fig_2 = go.Figure(frames=[go.Frame(data=[
+    plot_sentiment_vs_volume(
+        format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, date),
+        format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                               date),
+        'nn-predictions_avg_score', events_array,
+        'England')[0],
+
+    plot_sentiment_vs_volume(
+        format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, date),
+        format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                               date),
+        'nn-predictions_avg_score', events_array,
+        'Scotland')[0],
+    plot_sentiment_vs_volume(
+        format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, date),
+        format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                               date),
+        'nn-predictions_avg_score', events_array,
+        'Northern Ireland')[0],
+    plot_sentiment_vs_volume(
+        format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, date),
+        format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                               date),
+        'nn-predictions_avg_score', events_array,
+        'Wales')[0]
+
+],
+
+    name=str(i)  # you need to name the frame for the animation to behave properly
+)
+    for i, date in enumerate(dates_list)]
+)
 
 fig_2.add_trace(plot_sentiment_vs_volume(
-                                       format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, start_global),
-                                       format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
-                                                              start_global),
-                                       'nn-predictions_avg_score', events_array,
-                                       'England')[0])
+    format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, start_global),
+    format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                           start_global),
+    'nn-predictions_avg_score', events_array,
+    'England')[0])
+
+fig_2.add_trace(plot_sentiment_vs_volume(
+    format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, start_global),
+    format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                           start_global),
+    'nn-predictions_avg_score', events_array,
+    'Scotland')[0])
+
+fig_2.add_trace(plot_sentiment_vs_volume(
+    format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, start_global),
+    format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                           start_global),
+    'nn-predictions_avg_score', events_array,
+    'Northern Ireland')[0])
+
+fig_2.add_trace(plot_sentiment_vs_volume(
+    format_df_ma_sent(agg_data, 'vader-predictions_avg_score', start_global, start_global),
+    format_df_ma_tweet_vol(tweet_counts_sources['lockdown'], countries, start_global,
+                           start_global),
+    'nn-predictions_avg_score', events_array,
+    'Wales')[0])
+
 def frame_args(duration):
     return {
         "frame": {"duration": duration},
@@ -140,7 +184,7 @@ fig.update_layout(
 
 fig_2.update_layout(
     title='Slices in volumetric data',
-    width=1400,
+    width=1600,
     height=600,
     scene=dict(
         yaxis=dict(range=[0.2, -0.2], autorange=False),
@@ -167,7 +211,9 @@ fig_2.update_layout(
             "y": 0,
         }
     ],
-    sliders=sliders
+    sliders=sliders,
+    yaxis_range=[-0.35, 0.35]
+
 )
 # fig.show()
 fig_2.show()
