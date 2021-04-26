@@ -7,13 +7,13 @@ import pandas as pd
 import json
 from dash.dependencies import Input, Output
 from utils.plotting import create_event_array, plot_animated_sent, plot_covid_stats, plot_hashtag_table, \
-    plot_sentiment_vs_volume
+    plot_sentiment_vs_volume, plot_corr_mat
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
 from plotly.subplots import make_subplots
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
-                meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}])
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets
+                )
 
 server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
@@ -55,7 +55,7 @@ regions_lists = {'county': counties, 'country': countries}
 weeks = r_numbers['date'].tolist()
 week_pairs = [(weeks[i], weeks[i + 1]) for i in range(0, len(weeks) - 1)]
 start_global = '2020-03-20'
-end_global = '2021-03-19'
+end_global = '2021-03-25'
 dates_list = pd.date_range(start=start_global, end=end_global).tolist()
 
 #
@@ -385,7 +385,12 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 html.H4(
-                                    children='Correlation Between Features'
+                                    children=[
+                                        'Correlation Between Features',
+                                        dcc.Graph(
+                                            id='corr-mat'
+                                        ),
+                                    ]
                                 ),
                             ],
                             className='pretty_container six columns'
@@ -597,6 +602,19 @@ def animated_chart(topic, sentiment_type, chart_value):
                                   end_global)
     else:
         return None
+
+
+@app.callback(
+    Output('corr-mat', 'figure'),
+    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+)
+def correlation_matrix(topic, sentiment_type):
+    df_sent = geo_df_data_sources[topic]
+    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+    vol_df = tweet_counts_sources[topic]
+    fig = plot_corr_mat(df_sent, vol_df, df_covid_stats, sentiment_col)
+
+    return fig
 
 
 if __name__ == '__main__':

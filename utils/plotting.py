@@ -1,6 +1,10 @@
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
+from functools import reduce
+from utils.aggregations import aggregate_sentiment_per_day_per_country, aggregate_vol_per_day_per_country, \
+    aggregate_stats_per_day_per_country
 
 pd.options.mode.chained_assignment = None  # Removes copy warning
 
@@ -23,6 +27,24 @@ def create_event_array(df_events, start, end):
             event_arr.append('')
 
     return event_arr
+
+
+def format_df_corr(df_sent, df_count, df_stats, sentiment_col):
+    dates_list = [str(date.date()) for date in pd.date_range(start='2020-03-20', end='2021-03-25').tolist()]
+    countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
+    sentiments_per_day_per_country = aggregate_sentiment_per_day_per_country(df_sent, dates_list, countries,
+                                                                             sentiment_col)
+    counts_per_day_per_country = aggregate_vol_per_day_per_country(df_count, dates_list, countries)
+    deaths_per_day_per_country = aggregate_stats_per_day_per_country(df_stats, countries, death_str, dates_list)
+    cases_per_day_per_country = aggregate_stats_per_day_per_country(df_stats, countries, case_str, dates_list)
+    df_dict = dict(
+        country=reduce(lambda x, y: x + y, [countries for _ in range(len(dates_list))]),
+        sentiment=sentiments_per_day_per_country,
+        volume=counts_per_day_per_country,
+        cases=deaths_per_day_per_country,
+        deaths=cases_per_day_per_country
+    )
+    return pd.DataFrame(df_dict)
 
 
 def select_df_between_dates(df, start, end):
@@ -144,7 +166,7 @@ def plot_covid_stats(data, countries, events, start, end):
     fig.update_layout(legend=dict(
         orientation="h",
         yanchor="bottom",
-        y=1.05,
+        y=1.1,
         xanchor="right",
         x=1), height=750, autosize=True)
     fig.update_xaxes(title_text="Date", showgrid=False)
@@ -165,7 +187,7 @@ def plot_hashtag_table(df):
             cells=dict(values=[df.Hashtag, df.Count], align='left', height=40)
         )
     ])
-    fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20))
+    fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20, l=5, r=5))
     return fig
 
 
@@ -287,6 +309,16 @@ def plot_animated_sent(agg_data, tweet_count_data, sentiment_column, countries, 
         yaxis_title='7 Day MA Sentiment'
 
     )
+    return fig
+
+
+def plot_corr_mat(sent_df, count_df, stats_df, sentiment_col):
+    df = format_df_corr(sent_df, count_df, stats_df, sentiment_col)
+    fig = px.scatter_matrix(df,
+                            dimensions=['sentiment', 'volume', 'cases', 'deaths'],
+                            color='country',
+                            symbol='country'
+                            )
     return fig
 
 

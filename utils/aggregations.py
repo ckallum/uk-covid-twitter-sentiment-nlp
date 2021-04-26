@@ -41,5 +41,33 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
     return full_data
 
 
+def aggregate_sentiment_per_day_per_country(df_sent, dates, countries, sentiment_col):
+    sentiments = []
+    for date in dates:
+        date_df = df_sent.loc[df_sent['date'] == date]
+        for country in countries:
+            region_df = date_df.loc[date_df['country'] == country]
+            sentiments.append(region_df[sentiment_col].mean())
+    return sentiments
+
+
+def aggregate_vol_per_day_per_country(df_count, dates, countries):
+    volume_list = []
+    for date in dates:
+        for country in countries:
+            volume_list.append(df_count.loc[df_count['date'] == date, country].values[0])
+    return volume_list
+
+
+def aggregate_stats_per_day_per_country(df_stats, countries, col, dates):
+    stats_list = []
+    for date in dates:
+        df_stats['date'] = pd.to_datetime(df_stats.date, format='%Y-%m-%d')
+        dates_df = df_stats.loc[df_stats['date'] == date]
+        for country in countries:
+            stats_list.append(dates_df.loc[dates_df['country'] == country, col].values[0])
+    return stats_list
+
+
 def aggregate_all_cases_over_time(data):
     pass
