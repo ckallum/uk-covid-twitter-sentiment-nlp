@@ -5,11 +5,13 @@ import dash_html_components as html
 import plotly.express as px
 import pandas as pd
 import json
-from dash.dependencies import Input, Output
-from utils.plotting import create_event_array, plot_animated_sent, plot_covid_stats, plot_hashtag_table, \
+from dash.dependencies import Input, Output, State
+from utils.formatting import create_event_array
+from utils.plotting import plot_animated_sent, plot_covid_stats, plot_hashtag_table, \
     plot_sentiment_vs_volume, plot_corr_mat
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
 from plotly.subplots import make_subplots
+from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets
@@ -23,7 +25,6 @@ df_covid_stats = pd.read_csv('data/COVID-Dataset/uk_covid_stats.csv', skipinitia
 uk_counties = json.load(open('data/Geojson/uk_counties_simpler.json', 'r'))
 r_numbers = pd.read_csv('data/COVID-Dataset/r_numbers.csv')
 df_events = pd.read_csv('data/events/key_events.csv', skipinitialspace=True, usecols=['Date', 'Event'])
-countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
 all_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
@@ -33,6 +34,10 @@ geo_df_covid = pd.read_csv('data/covid/daily_sentiment_county_updated_locations.
 geo_df_lockdown = pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')
 tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
 tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
+news_df = pd.read_csv('data/events/news_timeline.csv')
+
+countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
+
 # Data Sources
 hashtag_data_sources = {'covid': hashtags_covid,
                         'lockdown': hashtags_lockdown}
@@ -51,12 +56,19 @@ tweet_counts_sources = {'covid': tweet_count_covid,
                         'lockdown': tweet_count_lockdown}
 regions_lists = {'county': counties, 'country': countries}
 
+# Formatted
+formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, countries),
+                         'lockdown': format_df_ma_tweet_vol(tweet_count_lockdown, countries)}
+formatted_tweet_sent = {'covid': format_df_ma_sent(geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
+
+formatted_covid_stats = format_df_ma_stats(df_covid_stats, countries)
+
 # Dates
 weeks = r_numbers['date'].tolist()
 week_pairs = [(weeks[i], weeks[i + 1]) for i in range(0, len(weeks) - 1)]
 start_global = '2020-03-20'
 end_global = '2021-03-25'
-dates_list = pd.date_range(start=start_global, end=end_global).tolist()
+dates_list = pd.date_range(start=start_global, end=end_global)
 
 #
 events_array = create_event_array(df_events, start_global, end_global)
@@ -120,7 +132,7 @@ def filters():
     return html.Div(
         [
             html.Div(children=[
-                html.P(id='data-selected', children='Select Tweet Data-set '),
+                html.P(id='df-selected', children='Select Tweet Data-set '),
                 dcc.Dropdown(
                     id="source-dropdown",
                     options=[
@@ -542,7 +554,7 @@ def display_map(day, nlp, topic):
 )
 def display_stats(day):
     today = str(dates_list[day].date())
-    return plot_covid_stats(df_covid_stats, countries, events_array, start_global, today)
+    return plot_covid_stats(formatted_covid_stats, countries, events_array, start_global, today)
 
 
 @app.callback(
@@ -552,11 +564,9 @@ def display_stats(day):
 def display_sentiment_vs_vol(day, topic, sentiment_type):
     selected_date = str(dates_list[day].date())
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
-    sentiment_data = geo_df_data_sources[topic]
-    agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
-                                                          selected_date)
-    tweet_count_df = tweet_counts_sources[topic]
-    return plot_sentiment_vs_volume(agg_data, tweet_count_df, sentiment_col, events_array, countries, start_global,
+    tweet_count_df = formatted_tweet_count[topic]
+    tweet_sent_df = formatted_tweet_sent[topic]
+    return plot_sentiment_vs_volume(tweet_sent_df, tweet_count_df, sentiment_col, events_array, countries, start_global,
                                     selected_date)
 
 
@@ -566,14 +576,13 @@ def display_sentiment_vs_vol(day, topic, sentiment_type):
 )
 def display_news(day):
     date = str(dates_list[day].date())
-    news_df = pd.read_csv('data/events/news_timeline.csv')
-    news_df = news_df.loc[news_df['Date'] == date]
+    df = news_df.loc[news_df['Date'] == date]
     # news_fig = ff.create_table(news_df.drop('Date', 1))
     # return df_to_table(news_df)
     links = ''
-    for ind in news_df.index:
+    for ind in df.index:
         headline = news_df['Headline'][ind]
-        URL = news_df['URL'][ind]
+        URL = df['URL'][ind]
         link = '[**' + headline + '**](' + URL + ') '
         blank = '''
 
@@ -588,32 +597,28 @@ def display_news(day):
 )
 def animated_chart(topic, sentiment_type, chart_value):
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
-    sentiment_data = geo_df_data_sources[topic]
-    agg_data = aggregate_sentiment_by_region_type_by_date(sentiment_data, countries, 'country', start_global,
-                                                          end_global)
-    tweet_count_df = tweet_counts_sources[topic]
     # "value": "show_emoji_sentiment"
     # "value": "show_hashtags_vs_time"
     # "value": "show_hashtags_vs_sentiment"
 
     # "value": "show_cases_vs_sentiment"
     if chart_value == 'show_sentiment_vs_time':
-        return plot_animated_sent(agg_data, tweet_count_df, sentiment_col, countries, events_array, start_global,
-                                  end_global)
-    else:
-        return None
+        return plot_animated_sent(formatted_tweet_sent[topic], formatted_tweet_count[topic], sentiment_col,
+                                  events_array, dates_list)
+    return None
 
 
 @app.callback(
     Output('corr-mat', 'figure'),
-    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+    [Input('root', 'children')],
+    [State('source-dropdown','value'), State('nlp-dropdown','value')]
 )
-def correlation_matrix(topic, sentiment_type):
+def correlation_matrix(root, topic, sentiment_type):
     df_sent = geo_df_data_sources[topic]
-    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     vol_df = tweet_counts_sources[topic]
-    fig = plot_corr_mat(df_sent, vol_df, df_covid_stats, sentiment_col)
-
+    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+    data = format_df_corr(df_sent, vol_df, df_covid_stats, sentiment_col, [str(date.date())for date in dates_list])
+    fig = plot_corr_mat(data)
     return fig
 
 

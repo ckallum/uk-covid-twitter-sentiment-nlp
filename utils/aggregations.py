@@ -55,7 +55,10 @@ def aggregate_vol_per_day_per_country(df_count, dates, countries):
     volume_list = []
     for date in dates:
         for country in countries:
-            volume_list.append(df_count.loc[df_count['date'] == date, country].values[0])
+            if date not in df_count['date'].tolist():
+                volume_list.append(0)
+            else:
+                volume_list.append(df_count.loc[df_count['date'] == date, country].values[0])
     return volume_list
 
 
