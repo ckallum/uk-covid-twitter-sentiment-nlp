@@ -2,9 +2,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
-from functools import reduce
-from utils.aggregations import aggregate_sentiment_per_day_per_country, aggregate_vol_per_day_per_country, \
-    aggregate_stats_per_day_per_country
 
 pd.options.mode.chained_assignment = None  # Removes copy warning
 
@@ -24,15 +21,24 @@ def select_df_between_dates(df, start, end):
 
 
 def get_sent_vol_traces(df_sent, df_num_tweets, sentiment_type, events, country):
+    sent_trace = get_sent_trace(df_sent, country, sentiment_type, events)
+    vol_trace = get_vol_trace(df_num_tweets, country, events)
+    return sent_trace, vol_trace
+
+
+def get_sent_trace(df_sent, country, sentiment_type, events):
     sent_trace = go.Scatter(x=df_sent.loc[df_sent['region_name'] == country, 'date'],
                             y=df_sent.loc[df_sent['region_name'] == country, sentiment_type],
                             name="{} 7 Day MA: Sentiment".format(country), text=events, textposition="bottom center"
                             )
+    return sent_trace
 
+
+def get_vol_trace(df_num_tweets, country, events):
     vol_trace = go.Scatter(x=df_num_tweets['date'], y=df_num_tweets[country],
                            name="{} 7 Day MA: Number of Tweets".format(country), text=events,
                            textposition="bottom center")
-    return sent_trace, vol_trace
+    return vol_trace
 
 
 def get_stats_trace(data, events, country):
@@ -72,7 +78,7 @@ def plot_covid_stats(data, countries, events, start, end):
     return fig
 
 
-def plot_sentiment_vs_volume(df_sent, df_vol, sentiment_col, events, countries, start, end):
+def plot_dropdown_sent_vs_vol(df_sent, df_vol, sentiment_col, events, countries, start, end):
     df_vol = select_df_between_dates(df_vol, start, end)
     df_sent = select_df_between_dates(df_sent, start, end)
     fig = make_subplots(rows=2, cols=2,
@@ -120,106 +126,24 @@ def plot_hashtag_table(df):
     return fig
 
 
-def plot_animated_sent(df_sent, df_vol, sentiment_column, events, dates_list):
-    fig = go.Figure(frames=[go.Frame(data=[
-        get_sent_vol_traces(
-            select_df_between_dates(df_sent, dates_list[0], date), select_df_between_dates(df_vol, dates_list[0], date),
-            sentiment_column, events,
-            'England')[0],
+def plot_sentiment(df_sent, sentiment_column, start, end):
+    df_sent = select_df_between_dates(df_sent, start, end)
+    df_sent = df_sent.rename(columns={'region_name': 'Country'})
+    fig = px.line(df_sent, x='date', y=sentiment_column, color='Country')
 
-        get_sent_vol_traces(
-            select_df_between_dates(df_sent, dates_list[0], date), select_df_between_dates(df_vol, dates_list[0], date),
-            sentiment_column, events,
-            'Scotland')[0],
-        get_sent_vol_traces(
-            select_df_between_dates(df_sent, dates_list[0], date), select_df_between_dates(df_vol, dates_list[0], date),
-            sentiment_column, events,
-            'Northern Ireland')[0],
-        get_sent_vol_traces(
-            select_df_between_dates(df_sent, dates_list[0], date), select_df_between_dates(df_vol, dates_list[0], date),
-            sentiment_column, events,
-            'Wales')[0],
-
-    ],
-        name=str(i)  # you need to name the frame for the animation to behave properly
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.05,
+        xanchor="right",
+        x=1,
+        itemsizing='constant'),
+        height=750, autosize=True,
+        margin=dict(l=20, r=20, t=80, b=20),
     )
-        for i, date in enumerate(dates_list)]
-    )
+    fig.update_xaxes(title_text="Date", showgrid=False)
+    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False, showgrid=False, range=[-0.4, 0.4])
 
-    fig.add_trace(get_sent_vol_traces(
-        df_sent, df_vol,
-        sentiment_column, events,
-        'England')[0])
-
-    fig.add_trace(get_sent_vol_traces(
-        df_sent, df_vol,
-        sentiment_column, events,
-        'Scotland')[0]
-                  )
-
-    fig.add_trace(get_sent_vol_traces(
-        df_sent, df_vol,
-        sentiment_column, events,
-        'Northern Ireland')[0]
-                  )
-
-    fig.add_trace(get_sent_vol_traces(
-        df_sent, df_vol,
-        sentiment_column, events,
-        'Wales')[0]
-                  )
-    sliders = [
-        {
-            "pad": {"b": 10, "t": 60},
-            "len": 0.9,
-            "x": 0.1,
-            "y": 0,
-            "steps": [
-                {
-                    "args": [[f.name], frame_args(0), {'frame': {'duration': 300, 'redraw': False},
-                                                       'mode': 'immediate', 'transition': {'duration': 300}}],
-                    "label": str(k),
-                    "method": "animate",
-                }
-                for k, f in enumerate(fig.frames)
-            ],
-        }
-    ]
-    fig.update_layout(
-        title='7 Day Moving Average of Tweet Sentiment for Each Country',
-        height=600,
-        autosize=True,
-        scene=dict(
-            yaxis=dict(range=[0.55, -0.55], autorange=False),
-            aspectratio=dict(x=1, y=1, z=1),
-        ),
-        updatemenus=[
-            {
-                "buttons": [
-                    {
-                        "args": [None, frame_args(50)],
-                        "label": "&#9654;",  # play symbol
-                        "method": "animate",
-                    },
-                    {
-                        "args": [[None], frame_args(0)],
-                        "label": "&#9724;",  # pause symbol
-                        "method": "animate",
-                    },
-                ],
-                "direction": "left",
-                "pad": {"r": 10, "t": 70},
-                "type": "buttons",
-                "x": 0.1,
-                "y": 0,
-            }
-        ],
-        sliders=sliders,
-        yaxis_range=[-0.45, 0.45],
-        xaxis_title='Date',
-        yaxis_title='7 Day MA Sentiment'
-
-    )
     return fig
 
 

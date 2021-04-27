@@ -1,17 +1,17 @@
-import dash
+import json
 import re
+
+import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import plotly.express as px
 import pandas as pd
-import json
+import plotly.express as px
 from dash.dependencies import Input, Output, State
+
 from utils.formatting import create_event_array
-from utils.plotting import plot_animated_sent, plot_covid_stats, plot_hashtag_table, \
-    plot_sentiment_vs_volume, plot_corr_mat
-from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
-from plotly.subplots import make_subplots
 from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
+from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, \
+    plot_sentiment, plot_corr_mat
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets
@@ -178,7 +178,12 @@ app.layout = html.Div(
 
         html.Div(
             id="app-container",
-            children=[
+            children=[dcc.Interval(
+                id="interval-component",
+                interval=2 * 1000,  # in milliseconds
+                n_intervals=0,  # start at batch 50
+                disabled=True,
+            ),
                 html.Div(children=[
                     filters(),
                     covid_stats_indicators()],
@@ -192,6 +197,9 @@ app.layout = html.Div(
                             ),
                             html.Button(
                                 'Next Date', id='next-button', n_clicks=0
+                            ),
+                            html.Button(
+                                'Play', id='play-button', n_clicks=0
                             )
                         ]
                     )
@@ -302,7 +310,7 @@ app.layout = html.Div(
                             id="ma-sent-container",
                             children=[
                                 html.H6(
-                                    "7 Day MA Sentiment vs Tweet Volume",
+                                    "7 Day Moving Average of Covid Sentiment For Each Country\n(Starts at 2020-03-27)",
                                     id="sent-vol-title",
                                 ),
                                 dcc.Graph(
@@ -342,7 +350,7 @@ app.layout = html.Div(
                                         "value": "show_emoji_sentiment",
                                     },
                                     {
-                                        "label": "COVID Sentiment vs Time",
+                                        "label": "7 Day MA COVID Sentiment vs Tweet Volume (Starts at 2020-03-27)",
                                         "value": "show_sentiment_vs_time",
                                     },
                                     {
@@ -501,19 +509,53 @@ def update_hashtag_table(selected_date, source):
     return plot_hashtag_table(hash_df)
 
 
+# @app.callback(
+#     [Output('days-slider', 'value'), Output('interval-component', 'disabled'), Output('play-button', 'children')],
+#     [Input('next-button', 'n_clicks'), Input('prev-button', 'n_clicks'), Input('next-button', 'n_clicks'),
+#      Input('interval-component', 'n_intervals')],
+#     [State('days-slider', 'value'), State('play-button', 'children')]
+# )
+# def button_pressed(inc_btn, dec_btn, play_btn, interval, day, play_txt):
+#     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+#     if 'next-button' in changed_id:
+#         if day < 364:
+#             return day + 1, False, play_txt
+#     if 'prev-button' in changed_id:
+#         if day > 0:
+#             return day - 1, False, play_txt
+#     if 'play-button' in changed_id:
+#         return day + 1, False, play_txt
+#     return day
+#
+
 @app.callback(
-    Output('days-slider', 'value'),
-    [Input('next-button', 'n_clicks'), Input('prev-button', 'n_clicks'), Input('days-slider', 'value')]
+    [Output('interval-component', 'n_intervals'), Output('interval-component', 'disabled'),
+     Output('play-button', 'children')],
+    [Input('next-button', 'n_clicks'), Input('prev-button', 'n_clicks'), Input('play-button', 'n_clicks'),
+     State('days-slider', 'value'), State('interval-component', 'disabled'), State('play-button', 'children')]
 )
-def button_pressed(inc_btn, dec_btn, day):
+def button_pressed(inc_btn, dec_btn, play_btn, day, disabled, play_text):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
     if 'next-button' in changed_id:
         if day < 364:
-            return day + 1
+            return day + 1, disabled, play_text
     if 'prev-button' in changed_id:
         if day > 0:
-            return day - 1
-    return day
+            return day - 1, disabled, play_text
+    if 'play-button' in changed_id:
+        if disabled:
+            return day, not disabled, 'stop'
+        else:
+            return day, True, 'start'
+
+    return day, True, play_text
+
+
+@app.callback(Output("days-slider", "value"),
+              [Input('interval-component', 'n_intervals')])
+def update_interval(current_interval):
+    if current_interval < 364:
+        return current_interval + 1
 
 
 @app.callback(
@@ -564,10 +606,8 @@ def display_stats(day):
 def display_sentiment_vs_vol(day, topic, sentiment_type):
     selected_date = str(dates_list[day].date())
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
-    tweet_count_df = formatted_tweet_count[topic]
     tweet_sent_df = formatted_tweet_sent[topic]
-    return plot_sentiment_vs_volume(tweet_sent_df, tweet_count_df, sentiment_col, events_array, countries, start_global,
-                                    selected_date)
+    return plot_sentiment(tweet_sent_df, sentiment_col, start_global, selected_date)
 
 
 @app.callback(
@@ -593,31 +633,38 @@ def display_news(day):
 
 @app.callback(
     Output('dropdown-figure', 'figure'),
-    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'), Input('chart-dropdown', 'value')]
+    [Input('days-slider', 'value'), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'),
+     Input('chart-dropdown', 'value')]
 )
-def animated_chart(topic, sentiment_type, chart_value):
+def dropdown_chart(day, topic, sentiment_type, chart_value):
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+    selected_date = str(dates_list[day].date())
+    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+    tweet_count_df = formatted_tweet_count[topic]
+    tweet_sent_df = formatted_tweet_sent[topic]
+
     # "value": "show_emoji_sentiment"
     # "value": "show_hashtags_vs_time"
     # "value": "show_hashtags_vs_sentiment"
 
     # "value": "show_cases_vs_sentiment"
     if chart_value == 'show_sentiment_vs_time':
-        return plot_animated_sent(formatted_tweet_sent[topic], formatted_tweet_count[topic], sentiment_col,
-                                  events_array, dates_list)
+        return plot_dropdown_sent_vs_vol(tweet_sent_df, tweet_count_df, sentiment_col, events_array, countries,
+                                         start_global,
+                                         selected_date)
     return None
 
 
 @app.callback(
     Output('corr-mat', 'figure'),
     [Input('root', 'children')],
-    [State('source-dropdown','value'), State('nlp-dropdown','value')]
+    [State('source-dropdown', 'value'), State('nlp-dropdown', 'value')]
 )
 def correlation_matrix(root, topic, sentiment_type):
     df_sent = geo_df_data_sources[topic]
     vol_df = tweet_counts_sources[topic]
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
-    data = format_df_corr(df_sent, vol_df, df_covid_stats, sentiment_col, [str(date.date())for date in dates_list])
+    data = format_df_corr(df_sent, vol_df, df_covid_stats, sentiment_col, [str(date.date()) for date in dates_list])
     fig = plot_corr_mat(data)
     return fig
 
