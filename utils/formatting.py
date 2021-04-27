@@ -1,8 +1,6 @@
 import json
 from functools import reduce
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
 from utils.aggregations import aggregate_sentiment_per_day_per_country, aggregate_vol_per_day_per_country, \
     aggregate_stats_per_day_per_country

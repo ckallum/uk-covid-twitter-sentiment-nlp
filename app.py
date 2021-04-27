@@ -8,12 +8,11 @@ import dash_html_components as html
 import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output, State
-from sklearn.preprocessing import MinMaxScaler
 
 from utils.formatting import create_event_array
 from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
 from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, \
-    plot_sentiment, plot_corr_mat
+    plot_sentiment, plot_corr_mat, plot_sentiment_bar
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets
@@ -28,14 +27,15 @@ uk_counties = json.load(open('data/Geojson/uk_counties_simpler.json', 'r'))
 r_numbers = pd.read_csv('data/COVID-Dataset/r_numbers.csv')
 df_events = pd.read_csv('data/events/key_events.csv', skipinitialspace=True, usecols=['Date', 'Event'])
 counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
-all_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
-all_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
 hashtags_covid = pd.read_csv('data/covid/top_ten_hashtags_per_day.csv')
 hashtags_lockdown = pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')
 geo_df_covid = pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv')
 geo_df_lockdown = pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')
 tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
 tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
+all_sentiments_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
+all_sentiments_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
+
 news_df = pd.read_csv('data/events/news_timeline.csv')
 
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
@@ -46,8 +46,8 @@ hashtag_data_sources = {'covid': hashtags_covid,
 geo_df_data_sources = {'covid': geo_df_covid,
                        'lockdown': geo_df_lockdown}
 
-all_sentiment_data_sources = {'covid': all_covid,
-                              'lockdown': all_lockdown}
+complete_data_sources = {'covid': all_sentiments_covid, 'lockdown': all_sentiments_lockdown}
+
 sentiment_dropdown_value_to_avg_score = {'nn': 'nn-predictions_avg_score', 'textblob': 'textblob-predictions_avg_score',
                                          'vader': 'vader-predictions_avg_score'}
 sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-score',
@@ -475,26 +475,11 @@ def update_map_title(selected_date, source):
     [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
 def update_bar_chart(selected_date, source, nlp):
-    data = all_sentiment_data_sources[source]
+    data = complete_data_sources[source]
     data['date'] = pd.to_datetime(data['date']).dt.date
     df = data[data['date'] == dates_list[selected_date]]
     label = sentiment_dropdown_value_to_predictions[nlp]
-    countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
-    sentiment_labels = ['neg', 'neu', 'pos']
-    sentiment_dict = {
-        'country': [],
-        'count': [],
-        'sentiment': []
-    }
-    for sentiment in sentiment_labels:
-        for country in countries:
-            sentiment_dict['country'].append(country)
-            sentiment_dict['sentiment'].append(sentiment)
-            df_reg = df[df['country'] == country]
-            df_sent = df_reg[df_reg[label] == sentiment]
-            sentiment_dict['count'].append(len(df_sent.index))
-    fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
-    return fig
+    return plot_sentiment_bar(df, label, countries)
 
 
 #
