@@ -24,7 +24,6 @@ def select_df_between_dates(df, start, end):
 
 
 def get_sent_vol_traces(df_sent, df_num_tweets, sentiment_type, events, country):
-    print(df_sent.columns, df_sent['region_name'])
     sent_trace = go.Scatter(x=df_sent.loc[df_sent['region_name'] == country, 'date'],
                             y=df_sent.loc[df_sent['region_name'] == country, sentiment_type],
                             name="{} 7 Day MA: Sentiment".format(country), text=events, textposition="bottom center"
