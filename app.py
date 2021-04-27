@@ -1,5 +1,6 @@
 import json
 import re
+import time
 
 import dash
 import dash_core_components as dcc
@@ -7,6 +8,7 @@ import dash_html_components as html
 import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output, State
+from sklearn.preprocessing import MinMaxScaler
 
 from utils.formatting import create_event_array
 from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
@@ -172,7 +174,7 @@ app.layout = html.Div(
             id="header",
             children=[
                 html.H4(
-                    children="Sentiment of Tweets about COVID-19 in the UK by County"),
+                    children="Notable Events"),
             ],
         ),
 
@@ -270,7 +272,7 @@ app.layout = html.Div(
                     html.Div(
                         [
                             html.P(
-                                "Top 10 Hashtags",
+                                "Top New Stories",
                                 style={
                                     "color": "#2a3f5f",
                                     "fontSize": "13px",
@@ -278,9 +280,11 @@ app.layout = html.Div(
                                     "marginBottom": "0",
                                 },
                             ),
-                            dcc.Graph(
-                                id='hashtag-table'
+                            dcc.Markdown(
+                                id="daily-news",
+                                style={"padding": "10px 13px 5px 13px", "marginBottom": "5"},
                             )
+
                         ],
                         className="pretty_container three columns",
                     ),
@@ -329,11 +333,10 @@ app.layout = html.Div(
 
                     children=[
                         html.H6(
-                            "Top News Stories",
+                            "Top 10 Hashtags",
                         ),
-                        dcc.Markdown(
-                            id="daily-news",
-                            style={"padding": "10px 13px 5px 13px", "marginBottom": "5"},
+                        dcc.Graph(
+                            id='hashtag-table'
                         )
                     ],
                     className='pretty_container three columns'
@@ -397,7 +400,7 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 html.H4(
-                                    children='Sentiment vs Tweet Volume'
+                                    children='Positive Sentiment Ratio Per Month'
                                 ),
                             ],
                             className='pretty_container six columns'
@@ -412,6 +415,9 @@ app.layout = html.Div(
                                         ),
                                     ]
                                 ),
+                                dcc.Loading(html.Div(id='scatter-loading'),
+                                            loading_state={'component_name': 'app-container', 'is_loading': True},
+                                            fullscreen=True, type='graph')
                             ],
                             className='pretty_container six columns'
                         )
@@ -603,10 +609,11 @@ def display_stats(day):
     Output('ma-sent-graph', 'figure'),
     [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
-def display_sentiment_vs_vol(day, topic, sentiment_type):
+def display_sentiments(day, topic, sentiment_type):
     selected_date = str(dates_list[day].date())
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     tweet_sent_df = formatted_tweet_sent[topic]
+    # tweet_sent_df = formatted_scaled_sent[topic]
     return plot_sentiment(tweet_sent_df, sentiment_col, start_global, selected_date)
 
 
@@ -657,8 +664,8 @@ def dropdown_chart(day, topic, sentiment_type, chart_value):
 
 @app.callback(
     Output('corr-mat', 'figure'),
-    [Input('root', 'children')],
-    [State('source-dropdown', 'value'), State('nlp-dropdown', 'value')]
+    [Input('root', 'children'),
+     Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
 def correlation_matrix(root, topic, sentiment_type):
     df_sent = geo_df_data_sources[topic]
@@ -669,7 +676,15 @@ def correlation_matrix(root, topic, sentiment_type):
     return fig
 
 
+# Loading Spinners
+@app.callback(Output('scatter-loading', 'children'), [Input('app-container', 'children')])
+def load(figure):
+    time.sleep(10)
+    return 'loading'
+
+
 if __name__ == '__main__':
     app.run_server(debug=True)
+    # scale(formatted_tweet_sent['covid'], formatted_tweet_count['covid'])
 
 ##TODO

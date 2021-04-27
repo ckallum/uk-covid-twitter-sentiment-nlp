@@ -1,6 +1,7 @@
 import json
 from functools import reduce
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
 from utils.aggregations import aggregate_sentiment_per_day_per_country, aggregate_vol_per_day_per_country, \
@@ -83,3 +84,18 @@ def format_df_ma_sent(df):
             df.loc[df['region_name'] == region, cols] = df.loc[df['region_name'] == region, cols].rolling(
                 window=MA_win).mean().dropna()  # 7 Day MA
     return df
+
+
+
+# def scale(df_sent, df_vol):
+#     scaler = MinMaxScaler()
+#     scaled_vol = scaler.fit_transform(df_vol.loc[:, countries])
+#     new_df = []
+#     for j, country in enumerate(countries):
+#         region_df = df_sent.loc[df_sent['region_name'] == country]
+#         for i, d in region_df.iterrows():
+#             region_df.loc[i, ['nn-predictions_avg_score', 'textblob-predictions_avg_score',
+#                               'vader-predictions_avg_score']] *= scaled_vol[i%4][j]
+#         new_df.append(region_df)
+#     new = pd.concat(new_df, axis=0)
+#     return new

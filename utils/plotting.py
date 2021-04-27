@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
-
+from sklearn.preprocessing import MinMaxScaler
 pd.options.mode.chained_assignment = None  # Removes copy warning
 
 case_str = 'newCasesByPublishDate'
@@ -78,15 +78,17 @@ def plot_covid_stats(data, countries, events, start, end):
     return fig
 
 
+
 def plot_dropdown_sent_vs_vol(df_sent, df_vol, sentiment_col, events, countries, start, end):
     df_vol = select_df_between_dates(df_vol, start, end)
     df_sent = select_df_between_dates(df_sent, start, end)
+
     fig = make_subplots(rows=2, cols=2,
                         specs=[[{"secondary_y": True},
                                 {"secondary_y": True}], [{"secondary_y": True},
                                                          {"secondary_y": True}]],
                         subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.25,
-                        horizontal_spacing=0.3)
+                        horizontal_spacing=0.2)
     for i, country in enumerate(countries):
         sent_trace, vol_trace = get_sent_vol_traces(df_sent, df_vol, sentiment_col, events, country)
         row, col = int((i / 2) + 1), (i % 2) + 1
@@ -128,7 +130,7 @@ def plot_hashtag_table(df):
 
 def plot_sentiment(df_sent, sentiment_column, start, end):
     df_sent = select_df_between_dates(df_sent, start, end)
-    df_sent = df_sent.rename(columns={'region_name': 'Country'})
+    df_sent.rename(columns={'region_name': 'Country'}, inplace=True)
     fig = px.line(df_sent, x='date', y=sentiment_column, color='Country')
 
     fig.update_layout(legend=dict(
@@ -155,6 +157,9 @@ def plot_corr_mat(df):
                             )
     return fig
 
+
+def plot_sentiment_over_months(df):
+    pass
 
 # def test_sublot_animation(agg_data, tweet_count_data, sentiment_column, countries, events, start, end):
 #     dates_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
