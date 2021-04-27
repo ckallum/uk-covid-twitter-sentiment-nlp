@@ -2,6 +2,9 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
+import datetime
+import random
+from dash.exceptions import PreventUpdate
 pd.options.mode.chained_assignment = None  # Removes copy warning
 
 case_str = 'newCasesByPublishDate'
@@ -175,6 +178,43 @@ def plot_corr_mat(df):
 
 def plot_sentiment_over_months(df):
     pass
+
+def emoji_to_colour(emojis, r_min=0, r_max=255, g_min=0, g_max=255, b_min=0, b_max=255):
+    mapping_colours = dict()
+    
+    for emoji in emojis.unique():
+        red = random.randint(r_min, r_max)
+        green = random.randint(g_min, g_max)
+        blue = random.randint(b_min, b_max)
+        rgb_string = 'rgb({}, {}, {})'.format(red, green, blue)
+    
+        mapping_colours[emoji] = rgb_string
+    
+    return mapping_colours
+
+def plot_emoji_bar_chart(df, date):
+    # mapping_colours = emoji_to_colour(df.emoji)
+    # df['colour'] = df['emoji'].map(mapping_colours)
+    if ((df['date'] == date).any()):
+        fdata = df[df['date'] == date]
+        title = 'Beginning: ' + date
+        fig = go.Figure([go.Bar(x=fdata['emoji'], y=fdata['count'],
+                                                        orientation = 'v',
+                                                        marker_color=fdata['colour'], hoverinfo='none',
+                                                        textposition='outside', texttemplate='%{x}<br>%{y}',
+                                                        cliponaxis=False)],
+                                        layout=go.Layout(font={'size': 14},
+                                                            plot_bgcolor = '#FFFFFF',
+                                                            xaxis={'showline': False, 'visible': False},
+                                                            yaxis={'showline': False, 'visible': False},
+                                                            bargap=0.1,
+                                                            title=title))
+        fig.update_layout(barmode='stack', xaxis={'categoryorder':'total descending'})
+        return fig
+    else: 
+        raise PreventUpdate
+
+
 
 # def test_sublot_animation(agg_data, tweet_count_data, sentiment_column, countries, events, start, end):
 #     dates_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]

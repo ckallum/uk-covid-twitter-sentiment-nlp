@@ -84,7 +84,29 @@ def format_df_ma_sent(df):
                 window=MA_win).mean().dropna()  # 7 Day MA
     return df
 
+def separate_top_10_emojis(df):
+    data = {"emoji":[], "date":[], "count":[]}
+    pre_dates = list(df['start_of_week_date'].apply(str))
+    dates = []
+    count = 0
+    for i in pre_dates:
+        top_10 = df.loc[df['start_of_week_date'] == i, 'top_ten_emojis']
+        top_10 =top_10[count]
+        count += 1
+        emoji_counts = eval(top_10)
+        for emoji_count in emoji_counts:
 
+        # For Name field
+            emoji_field = emoji_count[0]
+            date_field = datetime.datetime.strptime(i, '[\'%Y-%m-%d\']')
+            count_field = emoji_count[1]
+            data["emoji"].append(emoji_field)
+            data["date"].append(date_field)
+            data["count"].append(count_field)
+
+        # Creating DataFrame
+    df = pd.DataFrame(data)
+    return(df)
 
 # def scale(df_sent, df_vol):
 #     scaler = MinMaxScaler()

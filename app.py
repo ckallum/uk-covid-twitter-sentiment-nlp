@@ -1,7 +1,7 @@
 import json
 import re
 import time
-
+import plotly.graph_objects as go
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -12,7 +12,7 @@ from dash.dependencies import Input, Output, State
 from utils.formatting import create_event_array
 from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
 from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, \
-    plot_sentiment, plot_corr_mat, plot_sentiment_bar
+    plot_sentiment, plot_corr_mat, plot_sentiment_bar, plot_emoji_bar_chart, emoji_to_colour
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets
@@ -35,7 +35,7 @@ tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
 tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
 all_sentiments_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_sentiments_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
-
+emojis_covid = pd.read_csv('data/covid/covid_emoji_count_separated.csv')
 news_df = pd.read_csv('data/events/news_timeline.csv')
 
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
@@ -92,6 +92,10 @@ fig_0 = px.choropleth_mapbox(
     range_color=[-1, 1],
 )
 
+# initial emoji bar
+mapping_colours = emoji_to_colour(emojis_covid.emoji)
+emojis_covid['colour'] = emojis_covid['emoji'].map(mapping_colours)
+emoji_covid_fig = plot_emoji_bar_chart(emojis_covid, start_global)
 
 def check_between_dates(start, end, current):
     start, end, current = pd.to_datetime(start, format='%d/%m/%Y'), \
@@ -382,6 +386,21 @@ app.layout = html.Div(
                 ],
                     className='row'
                 ),
+                    html.Div(
+
+                    children=[
+                        html.H6(
+                            "Top Weekly Emojis",
+                        ),
+                        dcc.Graph(
+                            
+                            id='emoji-bar-chart',
+                            figure = emoji_covid_fig
+
+                        )
+                    ],
+                    className='pretty_container three columns'
+                ),
                 html.Div(
                     children=[
                         html.Div(
@@ -499,7 +518,6 @@ def update_hashtag_table(selected_date, source):
         hash_dict['Count'].append(count)
     hash_df = pd.DataFrame(hash_dict)
     return plot_hashtag_table(hash_df)
-
 
 # @app.callback(
 #     [Output('days-slider', 'value'), Output('interval-component', 'disabled'), Output('play-button', 'children')],
@@ -660,6 +678,17 @@ def correlation_matrix(root, topic, sentiment_type):
     data = format_df_corr(df_sent, vol_df, df_covid_stats, sentiment_col, [str(date.date()) for date in dates_list])
     fig = plot_corr_mat(data)
     return fig
+
+
+@app.callback(
+    Output('emoji-bar-chart', 'figure'),
+    [Input("days-slider", "value"), Input('source-dropdown', 'value')]
+)
+def update_emoji_bar_chart(selected_date, source):
+    selected_date = selected_date - (selected_date%7)
+    date = str(dates_list[selected_date].date())
+    emoji_df = emojis_covid
+    return plot_emoji_bar_chart(emoji_df, date)
 
 
 # Loading Spinners
