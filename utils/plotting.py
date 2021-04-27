@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
-from sklearn.preprocessing import MinMaxScaler
 pd.options.mode.chained_assignment = None  # Removes copy warning
 
 case_str = 'newCasesByPublishDate'
@@ -148,6 +147,22 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
 
     return fig
 
+def plot_sentiment_bar(df, sentiment_col, countries):
+    sentiment_labels = ['neg', 'neu', 'pos']
+    sentiment_dict = {
+        'country': [],
+        'count': [],
+        'sentiment': []
+    }
+    for sentiment in sentiment_labels:
+        for country in countries:
+            sentiment_dict['country'].append(country)
+            sentiment_dict['sentiment'].append(sentiment)
+            df_reg = df[df['country'] == country]
+            df_sent = df_reg[df_reg[sentiment_col] == sentiment]
+            sentiment_dict['count'].append(len(df_sent.index))
+    fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
+    return fig
 
 def plot_corr_mat(df):
     fig = px.scatter_matrix(df,
