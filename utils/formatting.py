@@ -73,7 +73,8 @@ def format_df_ma_tweet_vol(data, region_list):
 def format_df_ma_sent(df):
     df = aggregate_sentiment_by_region_type_by_date(df, countries, 'country', start_global,
                                                     end_global).copy()
-    cols = ['nn-predictions_avg_score', 'vader-predictions_avg_score', 'textblob-predictions_avg_score']
+    cols = ['nn-score_avg', 'textblob-score_avg',
+                 'vader-score_avg', 'native-score_avg']
     for region in df['region_name'].unique():
         if len(df.index) < 7:
             df.loc[df['region_name'] == region, cols] = df.loc[df['region_name'] == region, cols].rolling(

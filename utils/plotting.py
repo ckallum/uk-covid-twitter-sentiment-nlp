@@ -93,7 +93,7 @@ def plot_dropdown_sent_vs_vol(df_sent, df_vol, sentiment_col, events, countries,
         row, col = int((i / 2) + 1), (i % 2) + 1
         fig.add_trace(sent_trace, secondary_y=False, row=row, col=col)
         fig.add_trace(vol_trace, secondary_y=True, row=row, col=col)
-        fig.update_yaxes(range=[-0.4, 0.4], row=row, col=col, secondary_y=False)
+        fig.update_yaxes(range=[-0.4, 0.5], row=row, col=col, secondary_y=False)
     fig.update_layout(legend=dict(
         orientation="h",
         yanchor="bottom",
@@ -143,7 +143,7 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
         margin=dict(l=20, r=20, t=80, b=20),
     )
     fig.update_xaxes(title_text="Date", showgrid=False)
-    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False, showgrid=False, range=[-0.4, 0.4])
+    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False, showgrid=False, range=[-0.4, 0.5])
 
     return fig
 

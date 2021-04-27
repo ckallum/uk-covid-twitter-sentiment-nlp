@@ -48,12 +48,12 @@ geo_df_data_sources = {'covid': geo_df_covid,
 
 complete_data_sources = {'covid': all_sentiments_covid, 'lockdown': all_sentiments_lockdown}
 
-sentiment_dropdown_value_to_avg_score = {'nn': 'nn-predictions_avg_score', 'textblob': 'textblob-predictions_avg_score',
-                                         'vader': 'vader-predictions_avg_score'}
+sentiment_dropdown_value_to_avg_score = {'nn': 'nn-score_avg', 'textblob': 'textblob-score_avg',
+                                         'vader': 'vader-score_avg', 'native': 'native-score_avg'}
 sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-score',
-                                     'vader': 'vader-score'}
+                                     'vader': 'vader-score', 'native':'native-score'}
 sentiment_dropdown_value_to_predictions = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
-                                           'vader': 'vader-predictions'}
+                                           'vader': 'vader-predictions', 'native': 'native-predictions'}
 tweet_counts_sources = {'covid': tweet_count_covid,
                         'lockdown': tweet_count_lockdown}
 regions_lists = {'county': counties, 'country': countries}
@@ -153,7 +153,8 @@ def filters():
                     options=[
                         {"label": "Vader", "value": "vader"},
                         {"label": "Text Blob", "value": "textblob"},
-                        {"label": "NN", "value": "nn"}
+                        {"label": "NN", "value": "nn"},
+                        {"label": 'Native', "value": 'native'}
                     ],
                     value="nn",
                     clearable=False,

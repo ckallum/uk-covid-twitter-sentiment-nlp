@@ -1,7 +1,8 @@
 import pandas as pd
 
-score_columns = ['nn-predictions_avg_score', 'vader-predictions_avg_score', 'textblob-predictions_avg_score']
-prediction_columns = ['nn-predictions', 'vader-predictions', 'textblob-predictions']
+score_columns = ['nn-score_avg', 'textblob-score_avg',
+                 'vader-score_avg', 'native-score_avg']
+prediction_columns = ['nn', 'vader', 'textblob', 'native']
 sentiments = {'neg': -1, 'pos': 1, 'neu': 0}
 
 
@@ -20,7 +21,7 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
 
     """
     date_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
-    score_by_region = {'{}_avg_score'.format(prediction_version): [] for
+    score_by_region = {'{}-score_avg'.format(prediction_version): [] for
                        prediction_version in prediction_columns}
     dates = []
     regions = []
