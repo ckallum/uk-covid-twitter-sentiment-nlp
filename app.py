@@ -42,7 +42,7 @@ notable_days_lockdown = pd.read_csv('data/lockdown/notable_days_months.csv')
 scatter_covid = pd.read_csv('data/covid/scatter.csv')
 scatter_lockdown = pd.read_csv('data/lockdown/scatter.csv')
 
-emojis_covid = pd.read_csv('data/covid/covid_emoji_count_separated.csv')
+emojis_covid = pd.read_csv('data/covid/weekly_emojis_with_colours.csv')
 news_df = pd.read_csv('data/events/news_timeline.csv')
 
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
@@ -102,9 +102,6 @@ fig_0 = px.choropleth_mapbox(
     range_color=[-1, 1],
 )
 
-# initial emoji bar
-mapping_colours = emoji_to_colour(emojis_covid.emoji)
-emojis_covid['colour'] = emojis_covid['emoji'].map(mapping_colours)
 emoji_covid_fig = plot_emoji_bar_chart(emojis_covid, start_global)
 
 
