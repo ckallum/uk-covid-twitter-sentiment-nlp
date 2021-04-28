@@ -561,19 +561,19 @@ def update_hashtag_table(selected_date, source):
 )
 def button_pressed(inc_btn, dec_btn, play_btn, day, disabled, play_text):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    if 'next-button' in changed_id:
+    if 'next-button' in changed_id and disabled:
         if day < 364:
-            return day + 1, disabled, play_text
-    if 'prev-button' in changed_id:
+            return day, disabled, play_text
+    if 'prev-button' in changed_id and disabled:
         if day > 0:
-            return day - 1, disabled, play_text
+            return day - 2, disabled, play_text
     if 'play-button' in changed_id:
         if disabled:
             return day, not disabled, 'stop'
         else:
             return day, True, 'start'
 
-    return day, True, play_text
+    return day-1, True, play_text
 
 
 @app.callback(Output("days-slider", "value"),
