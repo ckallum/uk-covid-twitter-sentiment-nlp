@@ -1,19 +1,25 @@
 import json
 from functools import reduce
 import pandas as pd
-from utils.aggregations import aggregate_sentiment_by_region_type_by_date, aggregate_all_cases_over_time
+from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from utils.aggregations import aggregate_sentiment_per_day_per_country, aggregate_vol_per_day_per_country, \
-    aggregate_stats_per_day_per_country
+    aggregate_stats_per_day_per_country, notable_month_by_sent_label, notable_months_count, notable_days_count, \
+    notable_day_by_sent_label
 
 start_global = '2020-03-20'
 end_global = '2021-03-25'
 dates_list = pd.date_range(start=start_global, end=end_global).tolist()
+str_dates_list = [str(date.date()) for date in dates_list]
 
 case_str = 'newCasesByPublishDate'
 death_str = 'newDeathsByDeathDate'
 event_str = 'Event'
 MA_win = 7
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
+avg_cols = ['nn-score_avg', 'textblob-score_avg',
+            'vader-score_avg', 'native-score_avg']
+
+prediction_types = ['nn', 'vader', 'textblob', 'native']
 
 
 def create_event_array(df_events, start, end):
@@ -73,18 +79,36 @@ def format_df_ma_tweet_vol(data, region_list):
 def format_df_ma_sent(df):
     df = aggregate_sentiment_by_region_type_by_date(df, countries, 'country', start_global,
                                                     end_global).copy()
-    cols = ['nn-score_avg', 'textblob-score_avg',
-                 'vader-score_avg', 'native-score_avg']
     for region in df['region_name'].unique():
         if len(df.index) < 7:
-            df.loc[df['region_name'] == region, cols] = df.loc[df['region_name'] == region, cols].rolling(
+            df.loc[df['region_name'] == region, avg_cols] = df.loc[df['region_name'] == region, avg_cols].rolling(
                 window=len(df.index)).mean().dropna()  # 7 Day MA
         else:
-            df.loc[df['region_name'] == region, cols] = df.loc[df['region_name'] == region, cols].rolling(
+            df.loc[df['region_name'] == region, avg_cols] = df.loc[df['region_name'] == region, avg_cols].rolling(
                 window=MA_win).mean().dropna()  # 7 Day MA
     return df
 
 
+def format_df_notable_days(df_sent, df_count):
+    indexes = ['max_day', 'max_month', 'pos_day', 'pos_month', 'neg_day', 'neg_month']
+    result_df_list = []
+    for sentiment in prediction_types:
+        columns = {'date': [], 'rate': [], 'sentiment_type': []}
+        max_day, day_count = notable_days_count(df_count, str_dates_list, countries)
+        max_month, month_count = notable_months_count(df_count, countries)
+        pos_day, day_pos_rate = notable_day_by_sent_label(df_sent, sentiment, 'pos', str_dates_list)
+        pos_month, month_pos_rate = notable_month_by_sent_label(df_sent, sentiment, 'pos')
+        neg_day, day_neg_rate = notable_day_by_sent_label(df_sent, sentiment, 'neg', str_dates_list)
+        neg_month, month_neg_rate = notable_month_by_sent_label(df_sent, sentiment, 'neg')
+
+        columns['sentiment_type'].append(sentiment)
+        columns['date'] += [max_day, max_month, pos_day, pos_month, neg_day, neg_month]
+        columns['rate'] += [day_count, month_count, day_pos_rate, month_pos_rate, day_neg_rate, month_neg_rate]
+        data = pd.DataFrame(columns, index=indexes)
+        result_df_list.append(data)
+    df = pd.concat(result_df_list, axis=0)
+
+    return df
 
 # def scale(df_sent, df_vol):
 #     scaler = MinMaxScaler()

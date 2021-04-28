@@ -1,7 +1,7 @@
 import json
 import re
 import time
-
+import datetime
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -11,8 +11,8 @@ from dash.dependencies import Input, Output, State
 
 from utils.formatting import create_event_array
 from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
-from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, \
-    plot_sentiment, plot_corr_mat, plot_sentiment_bar
+from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, plot_sentiment, \
+    plot_corr_mat, plot_sentiment_bar, plot_notable_days
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets
@@ -35,6 +35,8 @@ tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
 tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
 all_sentiments_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_sentiments_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
+notable_days_covid = pd.read_csv('data/lockdown/notable_days_months.csv')
+notable_days_lockdown = pd.read_csv('data/lockdown/notable_days_months.csv')
 
 news_df = pd.read_csv('data/events/news_timeline.csv')
 
@@ -51,12 +53,14 @@ complete_data_sources = {'covid': all_sentiments_covid, 'lockdown': all_sentimen
 sentiment_dropdown_value_to_avg_score = {'nn': 'nn-score_avg', 'textblob': 'textblob-score_avg',
                                          'vader': 'vader-score_avg', 'native': 'native-score_avg'}
 sentiment_dropdown_value_to_score = {'nn': 'nn-score', 'textblob': 'textblob-score',
-                                     'vader': 'vader-score', 'native':'native-score'}
+                                     'vader': 'vader-score', 'native': 'native-score'}
 sentiment_dropdown_value_to_predictions = {'nn': 'nn-predictions', 'textblob': 'textblob-predictions',
                                            'vader': 'vader-predictions', 'native': 'native-predictions'}
 tweet_counts_sources = {'covid': tweet_count_covid,
                         'lockdown': tweet_count_lockdown}
 regions_lists = {'county': counties, 'country': countries}
+
+notable_days_sources = {'covid': notable_days_covid, 'lockdown': notable_days_lockdown}
 
 # Formatted
 formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, countries),
@@ -401,7 +405,10 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 html.H4(
-                                    children='Positive Sentiment Ratio Per Month'
+                                    children='Notable Days'
+                                ),
+                                dcc.Graph(
+                                    id='notable-day-table'
                                 ),
                             ],
                             className='pretty_container six columns'
@@ -650,10 +657,9 @@ def dropdown_chart(day, topic, sentiment_type, chart_value):
 
 @app.callback(
     Output('corr-mat', 'figure'),
-    [Input('root', 'children'),
-     Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
 )
-def correlation_matrix(root, topic, sentiment_type):
+def correlation_matrix(topic, sentiment_type):
     df_sent = geo_df_data_sources[topic]
     vol_df = tweet_counts_sources[topic]
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
@@ -669,8 +675,15 @@ def load(figure):
     return 'loading'
 
 
+@app.callback(Output('notable-day-table', 'figure'),
+              [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')])
+def notable_days(topic, col):
+    source = notable_days_sources[topic]
+    df = source.loc[source['sentiment_type'] == col]
+    fig = plot_notable_days(df)
+    return fig
+
+
 if __name__ == '__main__':
     app.run_server(debug=True)
-    # scale(formatted_tweet_sent['covid'], formatted_tweet_count['covid'])
-
 ##TODO

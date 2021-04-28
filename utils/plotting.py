@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
+
 pd.options.mode.chained_assignment = None  # Removes copy warning
 
 case_str = 'newCasesByPublishDate'
@@ -77,7 +78,6 @@ def plot_covid_stats(data, countries, events, start, end):
     return fig
 
 
-
 def plot_dropdown_sent_vs_vol(df_sent, df_vol, sentiment_col, events, countries, start, end):
     df_vol = select_df_between_dates(df_vol, start, end)
     df_sent = select_df_between_dates(df_sent, start, end)
@@ -115,7 +115,7 @@ def plot_hashtag_table(df):
     fig = go.Figure(data=[
         go.Table(
             header=dict(
-                values=['Hashtag', 'Count'],
+                values=['<b>Hashtag<b>', '<b>Count<b>'],
                 align='left',
                 fill_color='paleturquoise',
             ),
@@ -147,6 +147,7 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
 
     return fig
 
+
 def plot_sentiment_bar(df, sentiment_col, countries):
     sentiment_labels = ['neg', 'neu', 'pos']
     sentiment_dict = {
@@ -164,6 +165,7 @@ def plot_sentiment_bar(df, sentiment_col, countries):
     fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
     return fig
 
+
 def plot_corr_mat(df):
     fig = px.scatter_matrix(df,
                             dimensions=['sentiment', 'volume', 'cases', 'deaths'],
@@ -173,8 +175,27 @@ def plot_corr_mat(df):
     return fig
 
 
+def plot_notable_days(df):
+    fig = go.Figure(data=[
+        go.Table(
+            header=dict(
+                values=['<b>Notable Label<b>', '<b>Day/Month<b>', '<b>Ratio/Count<b>'],
+                align='left',
+                fill_color='paleturquoise',
+            ),
+            columnwidth=[120, 80, 80],
+            cells=dict(values=['<b>' + df.notable_label + '<b>', df.date, df.rate],
+                       fill=dict(color=['paleturquoise', 'white']),
+                       align='left', height=60)
+        )
+    ])
+    fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20, l=5, r=5))
+    return fig
+
+
 def plot_sentiment_over_months(df):
     pass
+
 
 # def test_sublot_animation(agg_data, tweet_count_data, sentiment_column, countries, events, start, end):
 #     dates_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
