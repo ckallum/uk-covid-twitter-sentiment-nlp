@@ -3,7 +3,7 @@ from functools import reduce
 import pandas as pd
 import datetime
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date
-from utils.aggregations import aggregate_sentiment_per_day_per_country, aggregate_vol_per_day_per_country, \
+from utils.aggregations import aggregate_all_sentiments_per_day_per_country, aggregate_vol_per_day_per_country, \
     aggregate_stats_per_day_per_country, notable_month_by_sent_label, notable_months_count, notable_days_count, \
     notable_day_by_sent_label
 
@@ -36,21 +36,23 @@ def create_event_array(df_events, start, end):
     return event_arr
 
 
-def format_df_corr(df_sent, df_count, df_stats, sentiment_col, dates_list):
+def format_df_corr(df_sent, df_count, df_stats, dates_list):
     countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
-    sentiments_per_day_per_country = aggregate_sentiment_per_day_per_country(df_sent, dates_list, countries,
-                                                                             sentiment_col)
+    sentiments_per_day_per_country = aggregate_all_sentiments_per_day_per_country(df_sent, dates_list,
+                                                                                  countries)
     counts_per_day_per_country = aggregate_vol_per_day_per_country(df_count, dates_list, countries)
     deaths_per_day_per_country = aggregate_stats_per_day_per_country(df_stats, countries, death_str, dates_list)
     cases_per_day_per_country = aggregate_stats_per_day_per_country(df_stats, countries, case_str, dates_list)
     df_dict = dict(
         country=reduce(lambda x, y: x + y, [countries for _ in range(len(dates_list))]),
-        sentiment=sentiments_per_day_per_country,
         volume=counts_per_day_per_country,
         cases=deaths_per_day_per_country,
         deaths=cases_per_day_per_country
     )
-    return pd.DataFrame(df_dict)
+    df = pd.DataFrame(df_dict)
+    sentiments_per_day_per_country.reset_index(inplace=True)
+    res_df = pd.concat([df, sentiments_per_day_per_country], axis=1)
+    return res_df
 
 
 def format_df_ma_stats(data, region_list):
@@ -89,19 +91,19 @@ def format_df_ma_sent(df):
                 window=MA_win).mean().dropna()  # 7 Day MA
     return df
 
+
 def separate_top_10_emojis(df):
-    data = {"emoji":[], "date":[], "count":[]}
+    data = {"emoji": [], "date": [], "count": []}
     pre_dates = list(df['start_of_week_date'].apply(str))
     dates = []
     count = 0
     for i in pre_dates:
         top_10 = df.loc[df['start_of_week_date'] == i, 'top_ten_emojis']
-        top_10 =top_10[count]
+        top_10 = top_10[count]
         count += 1
         emoji_counts = eval(top_10)
         for emoji_count in emoji_counts:
-
-        # For Name field
+            # For Name field
             emoji_field = emoji_count[0]
             date_field = datetime.datetime.strptime(i, '[\'%Y-%m-%d\']')
             count_field = emoji_count[1]
@@ -111,7 +113,8 @@ def separate_top_10_emojis(df):
 
         # Creating DataFrame
     df = pd.DataFrame(data)
-    return(df)
+    return (df)
+
 
 def format_df_notable_days(df_sent, df_count):
     indexes = ['max_day', 'max_month', 'pos_day', 'pos_month', 'neg_day', 'neg_month']

@@ -53,7 +53,6 @@ def map_label_to_score(df, label):
     return df
 
 
-
 def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
                                                start,
                                                end):
@@ -90,14 +89,15 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
     return full_data
 
 
-def aggregate_sentiment_per_day_per_country(df_sent, dates, countries, sentiment_col):
+def aggregate_all_sentiments_per_day_per_country(df_sent, dates, countries):
     sentiments = []
     for date in dates:
         date_df = df_sent.loc[df_sent['date'] == date]
         for country in countries:
             region_df = date_df.loc[date_df['country'] == country]
-            sentiments.append(region_df[sentiment_col].mean())
-    return sentiments
+            mean_df = region_df[avg_score_columns].mean().to_frame().transpose()
+            sentiments.append(mean_df)
+    return pd.concat(sentiments, axis=0)
 
 
 def aggregate_vol_per_day_per_country(df_count, dates, countries):
@@ -120,6 +120,7 @@ def aggregate_stats_per_day_per_country(df_stats, countries, col, dates):
             stats_list.append(dates_df.loc[dates_df['country'] == country, col].values[0])
     return stats_list
 
+
 def notable_day_by_sent_label(df, column, label, dates):
     resulting_day, result_ratio = None, 0
     column = prediction_columns[column]
@@ -133,7 +134,6 @@ def notable_day_by_sent_label(df, column, label, dates):
 
 
 def notable_month_by_sent_label(df, column, label):
-
     df = map_dates_to_months(df)
 
     resulting_month, result_ratio = None, 0
@@ -172,4 +172,3 @@ def notable_months_count(df, countries):
 
 def aggregate_all_cases_over_time(data):
     pass
-
