@@ -37,7 +37,7 @@ tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
 tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
 all_sentiments_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_sentiments_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
-notable_days_covid = pd.read_csv('data/lockdown/notable_days_months.csv')
+notable_days_covid = pd.read_csv('data/covid/notable_days_months.csv')
 notable_days_lockdown = pd.read_csv('data/lockdown/notable_days_months.csv')
 
 emojis_covid = pd.read_csv('data/covid/covid_emoji_count_separated.csv')
