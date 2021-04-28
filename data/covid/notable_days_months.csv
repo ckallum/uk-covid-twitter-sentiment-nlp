@@ -1,0 +1,25 @@
+notable_label,date,rate,sentiment_type
+Highest Tweet Volume Day,2021-03-25,2640.0,nn
+Highest Tweet Volume Month,March 2020,1659.0,nn
+Highest Positive Sentiment Ratio Day,2020-06-16,0.628,nn
+Highest Positive Sentiment Ratio Month,June 2020,0.573,nn
+Highest Negative Sentiment Ratio Day,2020-11-01,0.531,nn
+Highest Negative Sentiment Ratio Month,January 2021,0.478,nn
+Highest Tweet Volume Day,2021-03-25,2640.0,vader
+Highest Tweet Volume Month,March 2020,1659.0,vader
+Highest Positive Sentiment Ratio Day,2020-12-25,0.604,vader
+Highest Positive Sentiment Ratio Month,March 2020,0.509,vader
+Highest Negative Sentiment Ration Month,2020-05-25,0.470,vader
+Highest Negative Sentiment Ratio Month,January 2021,0.386,vader
+Highest Tweet Volume Day,2021-03-25,2640.0,textblob
+Highest Tweet Volume Month,March 2020,1659.0,textblob
+Highest Positive Sentiment Ratio Day,2020-12-25,0.6,textblob
+Highest Positive Sentiment Ratio Month,July 2020,0.516,textblob
+Highest Negative Sentiment Ration Month,2021-01-26,0.340,textblob
+Highest Negative Sentiment Ratio Month,October 2020,0.2642,textblob
+Highest Tweet Volume Day,2021-03-25,2640.0,native
+Highest Tweet Volume Month,March 2020,1659.0,native
+Highest Positive Sentiment Ratio Day,2020-12-25,0.703,native
+Highest Positive Sentiment Ratio Month,March 2020,0.650,native
+Highest Negative Sentiment Ration Month,2021-01-26,0.513,native
+Highest Negative Sentiment Ratio Month,January 2021,0.434,native
