@@ -142,7 +142,7 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
         xanchor="right",
         x=1,
         itemsizing='constant'),
-        height=750, autosize=True,
+        height=700, autosize=True,
         margin=dict(l=20, r=20, t=80, b=20),
     )
     fig.update_xaxes(title_text="Date", showgrid=False)
@@ -166,6 +166,7 @@ def plot_sentiment_bar(df, sentiment_col, countries):
             df_sent = df_reg[df_reg[sentiment_col] == sentiment]
             sentiment_dict['count'].append(len(df_sent.index))
     fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
+    fig.update_layout(autosize=True)
     return fig
 
 
@@ -173,8 +174,7 @@ def plot_corr_mat(df, sentiment_col):
     df.rename(columns={sentiment_col: 'sentiment'}, inplace=True)
     fig = px.scatter_matrix(df,
                             dimensions=['sentiment', 'volume', 'cases', 'deaths'],
-                            color='country',
-                            symbol='country'
+                            color='country'
                             )
     fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20, l=5, r=5))
     return fig

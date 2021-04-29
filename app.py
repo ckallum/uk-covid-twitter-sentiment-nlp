@@ -273,36 +273,68 @@ app.layout = html.Div(
                             html.Div(
                                 id="bar-chart-container",
                                 children=[
-                                    html.H6(
-                                        "Tweet Sentiment Ratio Within Each Country",
-                                        id="barchart-title",
-                                    ),
-                                    dcc.Graph(
-                                        id='sentiment_bar_chart'
-                                    ),
+                                    html.Div(children=[
+                                        html.H6(
+                                            children='Sentiment Count Per Day'
+                                        ),
+                                        dcc.Graph(
+                                            id='sentiment_bar_chart'
+                                        ),
+                                        html.H6(
+                                            "Top Weekly Emojis",
+                                        ),
+                                        dcc.Graph(
+                                            id='emoji-bar-chart',
+                                            figure=emoji_covid_fig
+                                        )
+                                    ],
+                                        className='pretty_container twelve columns'
+                                    )
                                 ],
+                                className='row'
+
                             ),
                         ],
                         className='pretty_container four columns'
                     ),
                     html.Div(
-                        [
-                            html.P(
-                                "Top New Stories",
-                                style={
-                                    "color": "#2a3f5f",
-                                    "fontSize": "13px",
-                                    "textAlign": "center",
-                                    "marginBottom": "0",
-                                },
-                            ),
-                            dcc.Markdown(
-                                id="daily-news",
-                                style={"padding": "10px 13px 5px 13px", "marginBottom": "5"},
+                        id='news-hashtag-div',
+                        children=[
+                            html.Div(
+                                children=[
+                                    html.Div(children=[
+                                        html.H6(
+                                            "Top News Stories",
+                                        ),
+                                        html.H6(
+                                            style={
+                                                "color": "#2a3f5f",
+                                                "fontSize": "13px",
+                                                "textAlign": "center",
+                                                "marginBottom": "50",
+                                            },
+                                        ),
+                                        dcc.Markdown(
+                                            id="daily-news",
+                                            style={"padding": "10px 13px 5px 13px", "marginBottom": "5"},
+                                        ),
+                                        html.H6(
+                                            "Top 10 Hashtags",
+                                        ),
+                                        dcc.Graph(
+                                            id='hashtag-table'
+                                        ),
+                                    ],
+                                        className='pretty_container twelve columns'
+
+                                    ),
+
+                                ],
+                                className='row'
                             )
 
                         ],
-                        className="pretty_container three columns",
+                        className="pretty_container four columns",
                     ),
 
                 ],
@@ -349,11 +381,11 @@ app.layout = html.Div(
 
                     children=[
                         html.H6(
-                            "Top 10 Hashtags",
+                            "Notable Days",
                         ),
                         dcc.Graph(
-                            id='hashtag-table'
-                        )
+                            id='notable-day-table'
+                        ),
                     ],
                     className='pretty_container three columns'
                 ),
@@ -398,21 +430,6 @@ app.layout = html.Div(
                     className='row'
                 ),
                 html.Div(
-
-                    children=[
-                        html.H6(
-                            "Top Weekly Emojis",
-                        ),
-                        dcc.Graph(
-
-                            id='emoji-bar-chart',
-                            figure=emoji_covid_fig
-
-                        )
-                    ],
-                    className='pretty_container three columns'
-                ),
-                html.Div(
                     children=[
                         html.Div(
                             id="analysis-header",
@@ -431,13 +448,10 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 html.H4(
-                                    children='Notable Days'
-                                ),
-                                dcc.Graph(
-                                    id='notable-day-table'
+                                    children="Popular Emoji's"
                                 ),
                             ],
-                            className='pretty_container six columns'
+                            className='pretty_container four columns'
                         ),
                         html.Div(
                             children=[
@@ -453,7 +467,7 @@ app.layout = html.Div(
                                             loading_state={'component_name': 'app-container', 'is_loading': True},
                                             fullscreen=True, type='graph')
                             ],
-                            className='pretty_container six columns'
+                            className='pretty_container eight columns'
                         )
                     ],
                     className='row'
@@ -573,7 +587,7 @@ def button_pressed(inc_btn, dec_btn, play_btn, day, disabled, play_text):
         else:
             return day, True, 'start'
 
-    return day-1, True, play_text
+    return day - 1, True, play_text
 
 
 @app.callback(Output("days-slider", "value"),
@@ -610,7 +624,7 @@ def display_map(day, nlp, topic):
         animation_frame='date',
         range_color=[-1, 1],
     )
-    fig.update_layout(autosize=True)
+    fig.update_layout(autosize=True, height=900)
     return fig
 
 
@@ -690,6 +704,7 @@ def correlation_matrix(topic, sentiment_type):
     data = scatter_sources[topic]
     fig = plot_corr_mat(data, sentiment_col)
     return fig
+
 
 @app.callback(
     Output('emoji-bar-chart', 'figure'),
