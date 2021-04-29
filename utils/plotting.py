@@ -18,7 +18,8 @@ MA_win = 7
 
 
 def select_df_between_dates(df, start, end):
-    date_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
+    date_list = [str(date.date())
+                 for date in pd.date_range(start=start, end=end).tolist()]
     df = df.loc[df['date'].isin(date_list)]
     return df
 
@@ -31,7 +32,8 @@ def get_sent_vol_traces(df_sent, df_num_tweets, sentiment_type, events, country)
 
 def get_sent_trace(df_sent, country, sentiment_type, events):
     sent_trace = go.Scatter(x=df_sent.loc[df_sent['region_name'] == country, 'date'],
-                            y=df_sent.loc[df_sent['region_name'] == country, sentiment_type],
+                            y=df_sent.loc[df_sent['region_name']
+                                          == country, sentiment_type],
                             name="{} 7 Day MA: Sentiment".format(country), text=events, textposition="bottom center"
                             )
     return sent_trace
@@ -76,8 +78,10 @@ def plot_covid_stats(data, countries, events, start, end):
         xanchor="right",
         x=1), height=750, autosize=True)
     fig.update_xaxes(title_text="Date", showgrid=False)
-    fig.update_yaxes(title_text="Covid Cases", secondary_y=False, showgrid=False)
-    fig.update_yaxes(title_text="Covid Deaths", secondary_y=True, showgrid=False)
+    fig.update_yaxes(title_text="Covid Cases",
+                     secondary_y=False, showgrid=False)
+    fig.update_yaxes(title_text="Covid Deaths",
+                     secondary_y=True, showgrid=False)
     return fig
 
 
@@ -92,11 +96,13 @@ def plot_dropdown_sent_vs_vol(df_sent, df_vol, sentiment_col, events, countries,
                         subplot_titles=('England', 'Scotland', 'NI', 'Wales'), vertical_spacing=0.25,
                         horizontal_spacing=0.2)
     for i, country in enumerate(countries):
-        sent_trace, vol_trace = get_sent_vol_traces(df_sent, df_vol, sentiment_col, events, country)
+        sent_trace, vol_trace = get_sent_vol_traces(
+            df_sent, df_vol, sentiment_col, events, country)
         row, col = int((i / 2) + 1), (i % 2) + 1
         fig.add_trace(sent_trace, secondary_y=False, row=row, col=col)
         fig.add_trace(vol_trace, secondary_y=True, row=row, col=col)
-        fig.update_yaxes(range=[-0.4, 0.5], row=row, col=col, secondary_y=False)
+        fig.update_yaxes(range=[-0.4, 0.5], row=row,
+                         col=col, secondary_y=False)
     fig.update_layout(legend=dict(
         orientation="h",
         yanchor="bottom",
@@ -108,8 +114,10 @@ def plot_dropdown_sent_vs_vol(df_sent, df_vol, sentiment_col, events, countries,
         margin=dict(l=20, r=20, t=80, b=20),
     )
     fig.update_xaxes(title_text="Date", showgrid=False)
-    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False, showgrid=False)
-    fig.update_yaxes(title_text="Tweet Volume", secondary_y=True, showgrid=False)
+    fig.update_yaxes(title_text="Sentiment(7MA)",
+                     secondary_y=False, showgrid=False)
+    fig.update_yaxes(title_text="Tweet Volume",
+                     secondary_y=True, showgrid=False)
 
     return fig
 
@@ -126,7 +134,8 @@ def plot_hashtag_table(df):
             cells=dict(values=[df.Hashtag, df.Count], align='left', height=40)
         )
     ])
-    fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20, l=5, r=5))
+    fig.update_layout(autosize=True, height=500,
+                      margin=dict(b=5, t=20, l=5, r=5))
     return fig
 
 
@@ -146,7 +155,8 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
         margin=dict(l=20, r=20, t=80, b=20),
     )
     fig.update_xaxes(title_text="Date", showgrid=False)
-    fig.update_yaxes(title_text="Sentiment(7MA)", secondary_y=False, showgrid=False, range=[-0.4, 0.5])
+    fig.update_yaxes(title_text="Sentiment(7MA)",
+                     secondary_y=False, showgrid=False, range=[-0.4, 0.5])
 
     return fig
 
@@ -165,7 +175,8 @@ def plot_sentiment_bar(df, sentiment_col, countries):
             df_reg = df[df['country'] == country]
             df_sent = df_reg[df_reg[sentiment_col] == sentiment]
             sentiment_dict['count'].append(len(df_sent.index))
-    fig = px.bar(pd.DataFrame(sentiment_dict), x='country', y='count', color='sentiment', barmode='group')
+    fig = px.bar(pd.DataFrame(sentiment_dict), x='country',
+                 y='count', color='sentiment', barmode='group')
     fig.update_layout(autosize=True)
     return fig
 
@@ -176,7 +187,8 @@ def plot_corr_mat(df, sentiment_col):
                             dimensions=['sentiment', 'volume', 'cases', 'deaths'],
                             color='country'
                             )
-    fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20, l=5, r=5))
+    fig.update_layout(autosize=True, height=500,
+                      margin=dict(b=5, t=20, l=5, r=5))
     return fig
 
 
@@ -184,7 +196,8 @@ def plot_notable_days(df):
     fig = go.Figure(data=[
         go.Table(
             header=dict(
-                values=['<b>Notable Label<b>', '<b>Day/Month<b>', '<b>Ratio/Count<b>'],
+                values=['<b>Notable Label<b>',
+                    '<b>Day/Month<b>', '<b>Ratio/Count<b>'],
                 align='left',
                 fill_color='paleturquoise',
             ),
@@ -194,7 +207,8 @@ def plot_notable_days(df):
                        align='left', height=60)
         )
     ])
-    fig.update_layout(autosize=True, height=500, margin=dict(b=5, t=20, l=5, r=5))
+    fig.update_layout(autosize=True, height=500,
+                      margin=dict(b=5, t=20, l=5, r=5))
     return fig
 
 
@@ -229,11 +243,22 @@ def plot_emoji_bar_chart(df, date):
                                 cliponaxis=False)],
                         layout=go.Layout(font={'size': 14},
                                          plot_bgcolor='#FFFFFF',
-                                         xaxis={'showline': False, 'visible': False},
-                                         yaxis={'showline': False, 'visible': False},
+                                         xaxis={'showline': False,
+                                                'visible': False},
+                                         yaxis={'showline': False,
+                                                'visible': False},
                                          bargap=0.1,
                                          title=title))
-        fig.update_layout(barmode='stack', xaxis={'categoryorder': 'total descending'})
+        fig.update_layout(
+            margin=dict(
+                l=10,
+                r=10,
+                b=50,
+                t=100,
+                pad=4
+            ),
+            barmode='stack',
+            xaxis={'categoryorder': 'total descending'})
         return fig
     else:
         raise PreventUpdate
