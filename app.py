@@ -43,6 +43,7 @@ scatter_covid = pd.read_csv('data/covid/scatter.csv')
 scatter_lockdown = pd.read_csv('data/lockdown/scatter.csv')
 
 emojis_covid = pd.read_csv('data/covid/weekly_emojis_with_colours.csv')
+emojis_lockdown = pd.read_csv('data/lockdown/weekly_emojis_with_colours.csv')
 news_df = pd.read_csv('data/events/news_timeline.csv')
 
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
@@ -74,6 +75,8 @@ formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, coun
 formatted_tweet_sent = {'covid': format_df_ma_sent(geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
 
 formatted_covid_stats = format_df_ma_stats(df_covid_stats, countries)
+
+emojis_weekly_source = {'covid': emojis_covid, 'lockdown': emojis_lockdown}
 
 # Dates
 weeks = r_numbers['date'].tolist()
@@ -692,10 +695,10 @@ def correlation_matrix(topic, sentiment_type):
     Output('emoji-bar-chart', 'figure'),
     [Input("days-slider", "value"), Input('source-dropdown', 'value')]
 )
-def update_emoji_bar_chart(selected_date, source):
+def update_emoji_bar_chart(selected_date, topic):
     selected_date = selected_date - (selected_date % 7)
     date = str(dates_list[selected_date].date())
-    emoji_df = emojis_covid
+    emoji_df = emojis_weekly_source[topic]
     return plot_emoji_bar_chart(emoji_df, date)
 
 
