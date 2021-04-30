@@ -49,6 +49,7 @@ news_df = pd.read_csv('data/events/news_timeline.csv')
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 
 # Data Sources
+wordcloud_urls = {'covid': 'covid_emoji_wordcloud.png', 'lockdown': 'lockdown_emoji_wordcloud.png'}
 hashtag_data_sources = {'covid': hashtags_covid,
                         'lockdown': hashtags_lockdown}
 geo_df_data_sources = {'covid': geo_df_covid,
@@ -450,6 +451,13 @@ app.layout = html.Div(
                                 html.H4(
                                     children="Popular Emoji's"
                                 ),
+                                html.Img(
+                                    id='emoji-wordcloud',
+                                    src=app.get_asset_url('covid_emoji_wordcloud.png'),
+                                    style={
+                                        'height': '400px',
+                                        'width': '100%'
+                                    })
                             ],
                             className='pretty_container four columns'
                         ),
@@ -721,7 +729,7 @@ def update_emoji_bar_chart(selected_date, topic):
 @app.callback(Output('scatter-loading', 'children'), [Input('app-container', 'children')])
 def load(figure):
     time.sleep(10)
-    return 'loading'
+    return None
 
 
 @app.callback(Output('notable-day-table', 'figure'),
@@ -731,6 +739,13 @@ def notable_days(topic, col):
     df = source.loc[source['sentiment_type'] == col]
     fig = plot_notable_days(df)
     return fig
+
+
+@app.callback(Output('emoji-wordcloud', 'src'),
+              Input('source-dropdown', 'value'))
+def emoji_wordcloud(topic):
+    src = wordcloud_urls[topic]
+    return app.get_asset_url(src)
 
 
 if __name__ == '__main__':
