@@ -154,9 +154,10 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
         height=700, autosize=True,
         margin=dict(l=20, r=20, t=80, b=20),
     )
+    range_list = [-0.4, 0.5] if sentiment_column != 'native-score_avg' else [-0.4, 0.6]
     fig.update_xaxes(title_text="Date", showgrid=False)
     fig.update_yaxes(title_text="Sentiment(7MA)",
-                     secondary_y=False, showgrid=False, range=[-0.4, 0.5])
+                     secondary_y=False, showgrid=False, range=range_list)
 
     return fig
 
