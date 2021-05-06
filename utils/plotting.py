@@ -161,6 +161,34 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
     return fig
 
 
+def plot_sentiment_comp(df_sent, start, end):
+    df_sent = select_df_between_dates(df_sent, start, end)
+    df = pd.melt(df_sent, id_vars=['date'],
+                 value_vars=['nn-score_avg', 'textblob-score_avg',
+                             'vader-score_avg', 'native-score_avg'],
+                 var_name='sentiment_type',
+                 value_name='sentiment_score'
+                 )
+
+    fig = px.line(df, x='date', y='sentiment_score', color='sentiment_type')
+
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.05,
+        xanchor="right",
+        x=1,
+        itemsizing='constant'),
+        height=700, autosize=True,
+        margin=dict(l=20, r=20, t=80, b=20),
+    )
+    fig.update_xaxes(title_text="Date", showgrid=False)
+    fig.update_yaxes(title_text="Sentiment(7MA)",
+                     secondary_y=False, showgrid=False, range=[-0.4, 0.5])
+
+    return fig
+
+
 def plot_sentiment_bar(df, sentiment_col, countries):
     sentiment_labels = ['neg', 'neu', 'pos']
     sentiment_dict = {
@@ -197,7 +225,7 @@ def plot_notable_days(df):
         go.Table(
             header=dict(
                 values=['<b>Notable Label<b>',
-                    '<b>Day/Month<b>', '<b>Ratio/Count<b>'],
+                        '<b>Day/Month<b>', '<b>Ratio/Count<b>'],
                 align='left',
                 fill_color='paleturquoise',
             ),

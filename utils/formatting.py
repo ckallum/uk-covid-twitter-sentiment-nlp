@@ -5,7 +5,7 @@ import datetime
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from utils.aggregations import aggregate_all_sentiments_per_day_per_country, aggregate_vol_per_day_per_country, \
     aggregate_stats_per_day_per_country, notable_month_by_sent_label, notable_months_count, notable_days_count, \
-    notable_day_by_sent_label
+    notable_day_by_sent_label, aggregate_sentiment_by_date
 
 start_global = '2020-03-20'
 end_global = '2021-03-25'
@@ -92,6 +92,18 @@ def format_df_ma_sent(df):
     return df
 
 
+def format_df_ma_sent_comp(df):
+    df = aggregate_sentiment_by_date(df, start_global, end_global)
+    if len(df.index) < 7:
+        df[avg_cols] = df.loc[:,avg_cols].rolling(
+            window=len(df.index)).mean().dropna()  # 7 Day MA
+    else:
+        df[avg_cols] = df.loc[:,avg_cols].rolling(
+            window=MA_win).mean().dropna()  # 7 Day MA
+    df['date']=str_dates_list
+    return df
+
+
 def separate_top_10_emojis(df):
     data = {"emoji": [], "date": [], "count": []}
     pre_dates = list(df['start_of_week_date'].apply(str))
@@ -117,7 +129,10 @@ def separate_top_10_emojis(df):
 
 
 def format_df_notable_days(df_sent, df_count):
-    indexes = ['max_day', 'max_month', 'pos_day', 'pos_month', 'neg_day', 'neg_month']
+    indexes = ['Highest Tweet Volume Day', 'Highest Tweet Volume Month', 'Highest Positive Sentiment Ratio Day',
+               'Highest Positive Sentiment Ratio Month',
+               'Highest Negative Sentiment Ratio Day',
+               'Highest Negative Sentiment Ratio Month']
     result_df_list = []
     for sentiment in prediction_types:
         columns = {'date': [], 'rate': [], 'sentiment_type': []}
@@ -133,19 +148,8 @@ def format_df_notable_days(df_sent, df_count):
         columns['rate'] += [day_count, month_count, day_pos_rate, month_pos_rate, day_neg_rate, month_neg_rate]
         data = pd.DataFrame(columns, index=indexes)
         result_df_list.append(data)
+
     df = pd.concat(result_df_list, axis=0)
+    df.index.name = 'notable_label'
 
     return df
-
-# def scale(df_sent, df_vol):
-#     scaler = MinMaxScaler()
-#     scaled_vol = scaler.fit_transform(df_vol.loc[:, countries])
-#     new_df = []
-#     for j, country in enumerate(countries):
-#         region_df = df_sent.loc[df_sent['region_name'] == country]
-#         for i, d in region_df.iterrows():
-#             region_df.loc[i, ['nn-predictions_avg_score', 'textblob-predictions_avg_score',
-#                               'vader-predictions_avg_score']] *= scaled_vol[i%4][j]
-#         new_df.append(region_df)
-#     new = pd.concat(new_df, axis=0)
-#     return new

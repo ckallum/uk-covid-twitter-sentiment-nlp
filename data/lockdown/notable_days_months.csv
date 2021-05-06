@@ -1,25 +1,25 @@
 notable_label,date,rate,sentiment_type
 Highest Tweet Volume Day,2021-01-04,1810.0,nn
 Highest Tweet Volume Month,November 2020,1454.0,nn
-Highest Positive Sentiment Ratio Day,2020-06-29,0.784,nn
-Highest Positive Sentiment Ratio Month,April 2020,0.627,nn
-Highest Negative Sentiment Ratio Day,2020-09-23,0.523,nn
-Highest Negative Sentiment Ratio Month,October 2020,0.453,nn
+Highest Positive Sentiment Ratio Day,2020-06-29,0.79,nn
+Highest Positive Sentiment Ratio Month,April 2020,0.63,nn
+Highest Negative Sentiment Ratio Day,2021-01-03,0.52,nn
+Highest Negative Sentiment Ratio Month,October 2020,0.46,nn
 Highest Tweet Volume Day,2021-01-04,1810.0,vader
 Highest Tweet Volume Month,November 2020,1454.0,vader
-Highest Positive Sentiment Ratio Day,2020-12-25,0.658,vader
-Highest Positive Sentiment Ratio Month,July 2020,0.592,vader
-Highest Negative Sentiment Ratio Day,2020-06-29,0.570,vader
-Highest Negative Sentiment Ratio Month,October 2020,0.313,vader
+Highest Positive Sentiment Ratio Day,2020-12-25,0.72,vader
+Highest Positive Sentiment Ratio Month,July 2020,0.59,vader
+Highest Negative Sentiment Ratio Day,2020-06-29,0.6,vader
+Highest Negative Sentiment Ratio Month,October 2020,0.39,vader
 Highest Tweet Volume Day,2021-01-04,1810.0,textblob
 Highest Tweet Volume Month,November 2020,1454.0,textblob
-Highest Positive Sentiment Ratio Day,2020-09-04,0.664,textblob
-Highest Positive Sentiment Ratio Month,July 2020,0.602,textblob
-Highest Negative Sentiment Ratio Day,2020-03-22,0.374,textblob
-Highest Negative Sentiment Ratio Month,March 2020,0.259,textblob
+Highest Positive Sentiment Ratio Day,2020-09-04,0.68,textblob
+Highest Positive Sentiment Ratio Month,July 2020,0.61,textblob
+Highest Negative Sentiment Ratio Day,2020-03-22,0.37,textblob
+Highest Negative Sentiment Ratio Month,March 2020,0.26,textblob
 Highest Tweet Volume Day,2021-01-04,1810.0,native
 Highest Tweet Volume Month,November 2020,1454.0,native
-Highest Positive Sentiment Ratio Day,2020-06-29,0.786,native
-Highest Positive Sentiment Ratio Month,July 2020,0.678,native
-Highest Negative Sentiment Ratio Day,2021-01-04,0.488,native
-Highest Negative Sentiment Ratio Month,March 2020,0.415,native
+Highest Positive Sentiment Ratio Day,2020-06-29,0.82,native
+Highest Positive Sentiment Ratio Month,July 2020,0.69,native
+Highest Negative Sentiment Ratio Day,2020-03-23,0.48,native
+Highest Negative Sentiment Ratio Month,March 2020,0.41,native

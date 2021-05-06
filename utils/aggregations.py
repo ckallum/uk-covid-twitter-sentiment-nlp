@@ -89,6 +89,36 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
     return full_data
 
 
+def aggregate_sentiment_by_date(data,
+                                start,
+                                end):
+    """
+    :param data:
+    :param start:
+    :param end:
+    :return:
+    DataFrame where each column is each region, each row is each date. Cells contain average sentiment/score of that region
+    within specified date.
+
+    """
+    date_list = [str(date.date()) for date in pd.date_range(start=start, end=end).tolist()]
+    score_by_day = {'{}-score_avg'.format(prediction_version): [] for
+                    prediction_version in prediction_types}
+    dates = []
+    data['date'] = pd.to_datetime(data.date)
+    for date in date_list:
+        date_data = data.loc[data['date'] == date]
+        for i, (k, prediction_version) in enumerate(score_columns.items()):
+            if not date_data.empty:
+                score_by_day[avg_score_columns[i]].append(
+                    date_data[prediction_version].mean())
+
+    full_data = pd.concat(
+        [pd.DataFrame({'date': dates}),
+         pd.DataFrame(score_by_day)], axis=1)
+    return full_data
+
+
 def aggregate_all_sentiments_per_day_per_country(df_sent, dates, countries):
     sentiments = []
     for date in dates:
@@ -126,7 +156,7 @@ def notable_day_by_sent_label(df, column, label, dates):
     column = prediction_columns[column]
     for day in dates:
         daily_df = df.loc[df['date'] == day]
-        label_ratio = len(daily_df.loc[daily_df[column] == label].index) / len(daily_df.index)
+        label_ratio = round(len(daily_df.loc[daily_df[column] == label].index) / len(daily_df), 2)
         if label_ratio > result_ratio:
             result_ratio = label_ratio
             resulting_day = day
@@ -140,7 +170,7 @@ def notable_month_by_sent_label(df, column, label):
     column = prediction_columns[column]
     for month in months:
         monthly_df = df.loc[df['date'] == month]
-        label_ratio = len(monthly_df.loc[monthly_df[column] == label].index) / len(monthly_df.index)
+        label_ratio = round(len(monthly_df.loc[monthly_df[column] == label].index) / len(monthly_df.index), 2)
         if label_ratio > result_ratio:
             result_ratio = label_ratio
             resulting_month = month

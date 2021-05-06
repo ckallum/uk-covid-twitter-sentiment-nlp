@@ -10,11 +10,12 @@ import plotly.express as px
 from dash.dependencies import Input, Output, State
 
 from utils.formatting import create_event_array
-from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr
+from utils.formatting import format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, format_df_corr, \
+    format_df_notable_days, format_df_ma_sent_comp
 
 from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, \
     plot_sentiment, plot_corr_mat, plot_sentiment_bar, plot_emoji_bar_chart, emoji_to_colour, \
-    plot_notable_days
+    plot_notable_days, plot_sentiment_comp
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets
@@ -76,6 +77,9 @@ formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, coun
 formatted_tweet_sent = {'covid': format_df_ma_sent(geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
 
 formatted_covid_stats = format_df_ma_stats(df_covid_stats, countries)
+
+formatted_sent_comp = {'covid': format_df_ma_sent_comp(all_sentiments_covid),
+                       'lockdown': format_df_ma_sent_comp(all_sentiments_lockdown)}
 
 emojis_weekly_source = {'covid': emojis_covid, 'lockdown': emojis_lockdown}
 
@@ -397,25 +401,19 @@ app.layout = html.Div(
                             html.P(id="chart-selector", children="Select Animated Charts:"),
                             dcc.Dropdown(
                                 options=[
-                                    {
-                                        "label": "Emoji Sentiment",
-                                        "value": "show_emoji_sentiment",
-                                    },
+
                                     {
                                         "label": "7 Day MA COVID Sentiment vs Tweet Volume (Starts at 2020-03-27)",
                                         "value": "show_sentiment_vs_time",
                                     },
+
                                     {
-                                        "label": "Popular Hashtags vs Time",
-                                        "value": "show_hashtags_vs_time",
+                                        "label": "Sentiment Variance",
+                                        "value": "show_sentiment_variance",
                                     },
                                     {
-                                        "label": "Hashtags vs Sentiment",
-                                        "value": "show_hashtags_vs_sentiment",
-                                    },
-                                    {
-                                        "label": "Sentiment vs Cases",
-                                        "value": "show_cases_vs_sentiment",
+                                        "label": "Comparison of Sentiment Generation Techniques",
+                                        "value": "show_sentiment_comparison",
                                     },
                                 ],
                                 value="show_sentiment_vs_time",
@@ -685,21 +683,18 @@ def display_news(day):
      Input('chart-dropdown', 'value')]
 )
 def dropdown_chart(day, topic, sentiment_type, chart_value):
-    sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     selected_date = str(dates_list[day].date())
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     tweet_count_df = formatted_tweet_count[topic]
     tweet_sent_df = formatted_tweet_sent[topic]
 
-    # "value": "show_emoji_sentiment"
-    # "value": "show_hashtags_vs_time"
-    # "value": "show_hashtags_vs_sentiment"
-
-    # "value": "show_cases_vs_sentiment"
     if chart_value == 'show_sentiment_vs_time':
         return plot_dropdown_sent_vs_vol(tweet_sent_df, tweet_count_df, sentiment_col, events_array, countries,
                                          start_global,
                                          selected_date)
+    if chart_value == 'show_sentiment_comparison':
+        df = formatted_sent_comp[topic]
+        return plot_sentiment_comp(df, start_global, selected_date)
     return None
 
 
