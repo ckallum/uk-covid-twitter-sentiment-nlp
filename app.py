@@ -412,7 +412,7 @@ app.layout = html.Div(
                                         "value": "show_sentiment_variance",
                                     },
                                     {
-                                        "label": "Comparison of Sentiment Generation Techniques",
+                                        "label": "Comparison of Sentiment Generation Techniques (Starts at 2020-03-27)",
                                         "value": "show_sentiment_comparison",
                                     },
                                 ],
