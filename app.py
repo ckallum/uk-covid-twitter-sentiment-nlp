@@ -604,6 +604,7 @@ app.layout = html.Div(
                 html.Div(
                     children=[
                         html.Div(
+                            id='emoji-wordcloud-div',
                             children=[
                                 html.H4(
                                     children="Popular Emoji's"
@@ -988,16 +989,11 @@ def show_hide_element(visibility):
 
 
 @app.callback(
-    Output("emoji-wordcloud", "style"),
+    Output("emoji-wordcloud-div", "style"),
     [Input("popular-emojis-div-toggle", "value")],
 )
 def show_hide_element(visibility):
-    if visibility == 'on':
-        return {'height': '400px',
-                'width': '100%', 'display': 'block'}
-    if visibility == []:
-        return {'display': 'none'}
-
+    return toggle_component(visibility)
 
 @app.callback(
     Output("corr-mat", "style"),
