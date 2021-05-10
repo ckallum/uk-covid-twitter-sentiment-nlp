@@ -780,7 +780,7 @@ layout_faq = [
                     children=[
                         html.Div(children=[
                             html.H4(
-                                "About the Authors",
+                                "About the Creators",
                             ),
 
                             dcc.Markdown('''
