@@ -2,6 +2,7 @@ import json
 import re
 import time
 import datetime
+# import dash_bootstrap_components as dbc
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -25,17 +26,23 @@ server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
 
 # READ DATA
-df_covid_stats = pd.read_csv('data/COVID-Dataset/uk_covid_stats.csv', skipinitialspace=True)
+df_covid_stats = pd.read_csv(
+    'data/COVID-Dataset/uk_covid_stats.csv', skipinitialspace=True)
 uk_counties = json.load(open('data/Geojson/uk_counties_simpler.json', 'r'))
 r_numbers = pd.read_csv('data/COVID-Dataset/r_numbers.csv')
-df_events = pd.read_csv('data/events/key_events.csv', skipinitialspace=True, usecols=['Date', 'Event'])
-counties = pd.read_csv('data/Geojson/uk-district-list-all.csv')['county'].tolist()
+df_events = pd.read_csv('data/events/key_events.csv',
+                        skipinitialspace=True, usecols=['Date', 'Event'])
+counties = pd.read_csv(
+    'data/Geojson/uk-district-list-all.csv')['county'].tolist()
 hashtags_covid = pd.read_csv('data/covid/top_ten_hashtags_per_day.csv')
 hashtags_lockdown = pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')
-geo_df_covid = pd.read_csv('data/covid/daily_sentiment_county_updated_locations.csv')
-geo_df_lockdown = pd.read_csv('data/lockdown/daily_sentiment_county_updated_locations.csv')
+geo_df_covid = pd.read_csv(
+    'data/covid/daily_sentiment_county_updated_locations.csv')
+geo_df_lockdown = pd.read_csv(
+    'data/lockdown/daily_sentiment_county_updated_locations.csv')
 tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
-tweet_count_lockdown = pd.read_csv('data/lockdown/daily_tweet_count_country.csv')
+tweet_count_lockdown = pd.read_csv(
+    'data/lockdown/daily_tweet_count_country.csv')
 all_sentiments_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
 all_sentiments_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
 notable_days_covid = pd.read_csv('data/covid/notable_days_months.csv')
@@ -50,13 +57,15 @@ news_df = pd.read_csv('data/events/news_timeline.csv')
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 
 # Data Sources
-wordcloud_urls = {'covid': 'covid_emoji_wordcloud.png', 'lockdown': 'lockdown_emoji_wordcloud.png'}
+wordcloud_urls = {'covid': 'covid_emoji_wordcloud.png',
+                  'lockdown': 'lockdown_emoji_wordcloud.png'}
 hashtag_data_sources = {'covid': hashtags_covid,
                         'lockdown': hashtags_lockdown}
 geo_df_data_sources = {'covid': geo_df_covid,
                        'lockdown': geo_df_lockdown}
 
-complete_data_sources = {'covid': all_sentiments_covid, 'lockdown': all_sentiments_lockdown}
+complete_data_sources = {'covid': all_sentiments_covid,
+                         'lockdown': all_sentiments_lockdown}
 
 sentiment_dropdown_value_to_avg_score = {'nn': 'nn-score_avg', 'textblob': 'textblob-score_avg',
                                          'vader': 'vader-score_avg', 'native': 'native-score_avg'}
@@ -68,13 +77,15 @@ tweet_counts_sources = {'covid': tweet_count_covid,
                         'lockdown': tweet_count_lockdown}
 regions_lists = {'county': counties, 'country': countries}
 
-notable_days_sources = {'covid': notable_days_covid, 'lockdown': notable_days_lockdown}
+notable_days_sources = {'covid': notable_days_covid,
+                        'lockdown': notable_days_lockdown}
 
 scatter_sources = {'covid': scatter_covid, 'lockdown': scatter_lockdown}
 # Formatted
 formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, countries),
                          'lockdown': format_df_ma_tweet_vol(tweet_count_lockdown, countries)}
-formatted_tweet_sent = {'covid': format_df_ma_sent(geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
+formatted_tweet_sent = {'covid': format_df_ma_sent(
+    geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
 
 formatted_covid_stats = format_df_ma_stats(df_covid_stats, countries)
 
@@ -94,7 +105,8 @@ dates_list = pd.date_range(start=start_global, end=end_global)
 events_array = create_event_array(df_events, start_global, end_global)
 
 # Initial map
-covid_geo_df = geo_df_data_sources['covid'].loc[geo_df_data_sources['covid']['date'] == start_global]
+covid_geo_df = geo_df_data_sources['covid'].loc[geo_df_data_sources['covid']
+                                                ['date'] == start_global]
 fig_0 = px.choropleth_mapbox(
     covid_geo_df,
     locations="id",
@@ -115,8 +127,8 @@ emoji_covid_fig = plot_emoji_bar_chart(emojis_covid, start_global)
 
 def check_between_dates(start, end, current):
     start, end, current = pd.to_datetime(start, format='%d/%m/%Y'), \
-                          pd.to_datetime(end, format='%d/%m/%Y'), \
-                          pd.to_datetime(current, format='%Y-%m-%d')
+        pd.to_datetime(end, format='%d/%m/%Y'), \
+        pd.to_datetime(current, format='%Y-%m-%d')
     return start < current <= end
 
 
@@ -252,6 +264,121 @@ app.layout = html.Div(
                         className='pretty_container twelve columns'
                     )],
                     className='row'),
+                html.Div(
+                id='toggle-container',
+                children=[
+             
+                    html.Div(
+                        dcc.Checklist(
+                            id='heatmap-container-toggle',
+                            options=[
+                                {'label': 'Sentiment Heatmap',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                           html.Div(
+                        dcc.Checklist(
+                            id='bar_chart_div-toggle',
+                            options=[
+                                {'label': 'Sentiment and Emoji Bar Charts',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='news-hashtag-div-toggle',
+                            options=[
+                                {'label': 'News and Hashtags',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='deaths-and-cases-div-toggle',
+                            options=[
+                                {'label': 'Deaths and Cases',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='7-day-MA-div-toggle',
+                            options=[
+                                {'label': '7 Day Moving Average',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='notable-days-div-toggle',
+                            options=[
+                                {'label': 'Notable Days',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='animated-charts-div-toggle',
+                            options=[
+                                {'label': 'Animated Charts',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='popular-emojis-div-toggle',
+                            options=[
+                                {'label': 'Popular Emojis',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+
+                    html.Div(
+                        dcc.Checklist(
+                            id='feature-correlation-div-toggle',
+                            options=[
+                                {'label': 'Correlation Between Features',
+                                 'value': 'on'},
+                            ],
+                            value=['on'],
+                        ),
+                        style={'display': 'inline-block'},
+                    ),
+                ],
+                className='row'
+            ),
                 html.Div(children=[
                     html.Div(
                         id="left-column",
@@ -272,21 +399,40 @@ app.layout = html.Div(
                         ],
                         className='pretty_container five columns'
                     ),
+
                     html.Div(
                         id='bar_chart_div',
                         children=[
                             html.Div(
                                 id="bar-chart-container",
                                 children=[
+
                                     html.Div(children=[
                                         html.H6(
                                             children='Sentiment Count Per Day'
                                         ),
+                                        dcc.Checklist(
+                                            id='sentiment_bar_chart_toggle',
+                                            options=[
+                                                {'label': 'Show/Hide',
+                                                    'value': 'on'},
+                                            ],
+                                            value=['on']
+                                        ),
+
                                         dcc.Graph(
                                             id='sentiment_bar_chart'
                                         ),
                                         html.H6(
                                             "Top Weekly Emojis",
+                                        ),
+                                        dcc.Checklist(
+                                            id='emoji-bar-chart-toggle',
+                                            options=[
+                                                {'label': 'Show/Hide',
+                                                    'value': 'on'},
+                                            ],
+                                            value=['on']
                                         ),
                                         dcc.Graph(
                                             id='emoji-bar-chart',
@@ -319,12 +465,29 @@ app.layout = html.Div(
                                                 "marginBottom": "50",
                                             },
                                         ),
+                                        dcc.Checklist(
+                                            id='daily-news-toggle',
+                                            options=[
+                                                {'label': 'Show/Hide',
+                                                    'value': 'on'},
+                                            ],
+                                            value=['on']
+                                        ),
                                         dcc.Markdown(
                                             id="daily-news",
-                                            style={"padding": "10px 13px 5px 13px", "marginBottom": "5"},
+                                            style={
+                                                "padding": "10px 13px 5px 13px", "marginBottom": "5"},
                                         ),
                                         html.H6(
                                             "Top 10 Hashtags",
+                                        ),
+                                        dcc.Checklist(
+                                            id='hashtag-table-toggle',
+                                            options=[
+                                                {'label': 'Show/Hide',
+                                                    'value': 'on'},
+                                            ],
+                                            value=['on']
                                         ),
                                         dcc.Graph(
                                             id='hashtag-table'
@@ -344,8 +507,7 @@ app.layout = html.Div(
 
                 ],
                     className='row'
-                )
-                ,
+            ),
                 html.Div(
                     id='covid-stats',
                     children=[
@@ -381,7 +543,7 @@ app.layout = html.Div(
                     className='row',
                     style={'height': '850px'}
 
-                ),
+            ),
                 html.Div(
 
                     children=[
@@ -393,12 +555,13 @@ app.layout = html.Div(
                         ),
                     ],
                     className='pretty_container three columns'
-                ),
+            ),
                 html.Div(children=[
                     html.Div(
                         id="graph-container",
                         children=[
-                            html.P(id="chart-selector", children="Select Animated Charts:"),
+                            html.P(id="chart-selector",
+                                   children="Select Animated Charts:"),
                             dcc.Dropdown(
                                 options=[
 
@@ -423,7 +586,7 @@ app.layout = html.Div(
                     ),
                 ],
                     className='row'
-                ),
+            ),
                 html.Div(
                     children=[
                         html.Div(
@@ -437,7 +600,7 @@ app.layout = html.Div(
                         )
                     ],
                     className='row'
-                ),
+            ),
                 html.Div(
                     children=[
                         html.Div(
@@ -447,7 +610,8 @@ app.layout = html.Div(
                                 ),
                                 html.Img(
                                     id='emoji-wordcloud',
-                                    src=app.get_asset_url('covid_emoji_wordcloud.png'),
+                                    src=app.get_asset_url(
+                                        'covid_emoji_wordcloud.png'),
                                     style={
                                         'height': '400px',
                                         'width': '100%'
@@ -466,14 +630,15 @@ app.layout = html.Div(
                                     ]
                                 ),
                                 dcc.Loading(html.Div(id='scatter-loading'),
-                                            loading_state={'component_name': 'app-container', 'is_loading': True},
+                                            loading_state={
+                                                'component_name': 'app-container', 'is_loading': True},
                                             fullscreen=True, type='graph')
                             ],
                             className='pretty_container eight columns'
                         )
                     ],
                     className='row'
-                )
+            )
             ]
         )
     ]
@@ -496,14 +661,16 @@ def update_r_text(date_index):
 @app.callback(Output('total_cases_indicator', 'children'), [Input("days-slider", "value")])
 def update_cases_text(date_index):
     selected_date = str(dates_list[date_index].date())
-    cases = df_covid_stats.loc[df_covid_stats['date'] == selected_date, 'cumCasesByPublishDate'].sum()
+    cases = df_covid_stats.loc[df_covid_stats['date']
+                               == selected_date, 'cumCasesByPublishDate'].sum()
     return cases
 
 
 @app.callback(Output('total_deaths_indicator', 'children'), [Input("days-slider", "value")])
 def update_deaths_text(date_index):
     selected_date = str(dates_list[date_index].date())
-    deaths = df_covid_stats.loc[df_covid_stats['date'] == selected_date, 'cumDeathsByDeathDate'].sum()
+    deaths = df_covid_stats.loc[df_covid_stats['date']
+                                == selected_date, 'cumDeathsByDeathDate'].sum()
     return deaths
 
 
@@ -522,7 +689,8 @@ def update_map_title(selected_date, source):
 
 @app.callback(
     Output('sentiment_bar_chart', 'figure'),
-    [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+    [Input("days-slider", "value"), Input('source-dropdown',
+                                          'value'), Input('nlp-dropdown', 'value')]
 )
 def update_bar_chart(selected_date, source, nlp):
     data = complete_data_sources[source]
@@ -541,7 +709,8 @@ def update_hashtag_table(selected_date, source):
     selected_date = str(dates_list[selected_date].date())
     hashtags_df = hashtag_data_sources[source]
     hashtag_date = hashtags_df.loc[hashtags_df['date'] == selected_date]
-    hashtags = [tuple(x.split(',')) for x in re.findall("\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
+    hashtags = [tuple(x.split(',')) for x in re.findall(
+        "\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
     hash_dict = {'Hashtag': [], 'Count': []}
     for hashtag, count in hashtags:
         hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
@@ -623,7 +792,8 @@ def display_stats(day):
 
 @app.callback(
     Output('ma-sent-graph', 'figure'),
-    [Input("days-slider", "value"), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value')]
+    [Input("days-slider", "value"), Input('source-dropdown',
+                                          'value'), Input('nlp-dropdown', 'value')]
 )
 def display_sentiments(day, topic, sentiment_type):
     selected_date = str(dates_list[day].date())
@@ -719,7 +889,124 @@ def emoji_wordcloud(topic):
     src = wordcloud_urls[topic]
     return app.get_asset_url(src)
 
+# collapse components
+
+
+def toggle_component(visibility):
+    if visibility == 'on':
+        return {'display': 'block'}
+    if visibility == []:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output("sentiment_bar_chart", "style"),
+    [Input("sentiment_bar_chart_toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("emoji-bar-chart", "style"),
+    [Input("emoji-bar-chart-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("bar_chart_div", "style"),
+    [Input("bar_chart_div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("left-column", "style"),
+    [Input("heatmap-container-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("news-hashtag-div", "style"),
+    [Input("news-hashtag-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("daily-news", "style"),
+    [Input("daily-news-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("hashtag-table", "style"),
+    [Input("hashtag-table-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("covid-stats-container", "style"),
+    [Input("deaths-and-cases-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("ma-sent-container", "style"),
+    [Input("7-day-MA-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("notable-day-table", "style"),
+    [Input("notable-days-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("graph-container", "style"),
+    [Input("animated-charts-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
+
+@app.callback(
+    Output("emoji-wordcloud", "style"),
+    [Input("popular-emojis-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    if visibility == 'on':
+        return {'height': '400px',
+                'width': '100%', 'display': 'block'}
+    if visibility == []:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output("corr-mat", "style"),
+    [Input("feature-correlation-div-toggle", "value")],
+)
+def show_hide_element(visibility):
+    return toggle_component(visibility)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-##TODO
+# TODO
