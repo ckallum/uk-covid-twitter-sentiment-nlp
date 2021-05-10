@@ -227,9 +227,13 @@ sidebar = html.Div(
         html.Hr(),
         dbc.Nav(
             [
-                dbc.NavLink("Timeline Exploration,\n\n", href="/", active="exact"),
-                dbc.NavLink("Data Analysis____,\n\n", href="/page-1", active="exact"),
-                dbc.NavLink("FAQ\n\n", href="/page-2", active="exact"),
+                dbc.NavLink("Home\n\n", href="/", active="exact"),
+                html.Br(),
+                html.Br(),
+                dbc.NavLink("Timeline Exploration,\n\n", href="/page-1", active="exact"),
+                html.Br(),
+                html.Br(),
+                dbc.NavLink("Data Analysis,\n\n", href="/page-2", active="exact"),
             ],
             vertical='md',
             pills=True,
@@ -1135,11 +1139,11 @@ def show_hide_element(visibility):
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
     if pathname == "/":
-        return layout_main
-    elif pathname == "/page-1":
-        return layout_analysis
-    elif pathname == "/page-2":
         return layout_faq
+    elif pathname == "/page-1":
+        return layout_main
+    elif pathname == "/page-2":
+        return layout_analysis
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [
