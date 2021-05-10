@@ -412,7 +412,7 @@ app.layout = html.Div(
                                         "value": "show_sentiment_comparison",
                                     },
                                 ],
-                                value="show_sentiment_vs_time",
+                                value="show_sentiment_comparison",
                                 id="chart-dropdown",
                             ),
                             dcc.Graph(
