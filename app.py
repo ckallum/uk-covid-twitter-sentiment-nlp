@@ -692,6 +692,8 @@ layout_faq = [
                          The end-user will be able to compare the results of different sentiment techniques and how public opinion compares between 
                           countries/regions in relation to the number of deaths, the number of cases, and certain pandemic related news events  over  the  last  year.
                            
+                           **Please use the sidebar to navigate to the rest of the dashboard!**
+                           
                            Have fun :)!
                         
                         ''')
