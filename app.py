@@ -6,6 +6,7 @@ import datetime
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output, State
@@ -19,12 +20,11 @@ from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_has
     plot_notable_days, plot_sentiment_comp
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets
-                )
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
-
+app.config.suppress_callback_exceptions = True
 # READ DATA
 df_covid_stats = pd.read_csv(
     'data/COVID-Dataset/uk_covid_stats.csv', skipinitialspace=True)
@@ -127,8 +127,8 @@ emoji_covid_fig = plot_emoji_bar_chart(emojis_covid, start_global)
 
 def check_between_dates(start, end, current):
     start, end, current = pd.to_datetime(start, format='%d/%m/%Y'), \
-        pd.to_datetime(end, format='%d/%m/%Y'), \
-        pd.to_datetime(current, format='%Y-%m-%d')
+                          pd.to_datetime(end, format='%d/%m/%Y'), \
+                          pd.to_datetime(current, format='%Y-%m-%d')
     return start < current <= end
 
 
@@ -185,8 +185,8 @@ def filters():
                     options=[
                         {"label": "Vader", "value": "vader"},
                         {"label": "Text Blob", "value": "textblob"},
-                        {"label": "NN", "value": "nn"},
-                        {"label": 'Native', "value": 'native'}
+                        {"label": "LSTM", "value": "nn"},
+                        {"label": 'Naive Bayes', "value": 'native'}
                     ],
                     value="nn",
                     clearable=False,
@@ -199,75 +199,125 @@ def filters():
     )
 
 
-#  App Layout
-app.layout = html.Div(
-    id="root",
-    children=[
-        html.Div(
-            id="header",
-            children=[
-                html.H4(
-                    children="Notable Events"),
-            ],
-        ),
+# the style arguments for the sidebar. We use position:fixed and a fixed width
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 62.5,
+    "left": 0,
+    "bottom": 0,
+    "width": "16rem",
+    "height": "40%",
+    "z-index": 1,
+    "overflow-x": "hidden",
+    "transition": "all 0.5s",
+    "padding": "0.5rem 1rem",
+    "background-color": "#f8f9fa",
+}
 
-        html.Div(
-            id="app-container",
-            children=[dcc.Interval(
-                id="interval-component",
-                interval=2 * 1000,  # in milliseconds
-                n_intervals=0,  # start at batch 50
-                disabled=True,
-            ),
-                html.Div(children=[
-                    filters(),
-                    covid_stats_indicators()],
-                    className='row'),
-                html.Div(children=[
+CONTENT_STYLE = {
+    "margin-left": "18rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+}
+
+sidebar = html.Div(
+    [
+        html.H2("Sidebar", className="display-4"),
+        html.Hr(),
+        dbc.Nav(
+            [
+                dbc.NavLink("Timeline Exploration,\n\n", href="/", active="exact"),
+                dbc.NavLink("Data Analysis____,\n\n", href="/page-1", active="exact"),
+                dbc.NavLink("FAQ\n\n", href="/page-2", active="exact"),
+            ],
+            vertical='md',
+            pills=True,
+        ),
+    ],
+    style=SIDEBAR_STYLE,
+)
+
+content = html.Div(id="page-content", style=CONTENT_STYLE)
+
+app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+
+#  App Layout
+layout_main = [
+    html.Div(
+        id="app-container",
+        children=[dcc.Interval(
+            id="interval-component",
+            interval=2 * 1000,  # in milliseconds
+            n_intervals=0,  # start at batch 50
+            disabled=True,
+        ),
+            dcc.Loading(html.Div(id='scatter-loading'),
+                        loading_state={
+                            'component_name': 'app-container', 'is_loading': True},
+                        fullscreen=True, type='graph'),
+            html.Div(
+                children=[
                     html.Div(
-                        id='button-container',
+                        id="analysis-header",
                         children=[
-                            html.Button(
-                                'Previous Date', id='prev-button', n_clicks=0
-                            ),
-                            html.Button(
-                                'Next Date', id='next-button', n_clicks=0
-                            ),
-                            html.Button(
-                                'Play', id='play-button', n_clicks=0
-                            )
-                        ]
-                    )
-                ],
-                    className='row'),
-                html.Div(children=[
-                    html.Div(
-                        id="slider-container",
-                        children=[
-                            html.P(
-                                id="slider-text",
-                                children="Drag the slider to change the date:",
-                            ),
-                            dcc.Slider(
-                                id="days-slider",
-                                min=0,
-                                max=364,
-                                value=0,
-                                marks={
-                                    str(x): {
-                                        "label": dates_list[x].date()
-                                    }
-                                    for x in range(0, 364, 30)
-                                },
+                            html.H2(
+                                children='Timeline Exploration'
                             ),
                         ],
                         className='pretty_container twelve columns'
-                    )],
-                    className='row'),
+                    )
+                ],
+                className='row'
+            ),
+            html.Div(children=[
+                filters(),
+                covid_stats_indicators()],
+                className='row'),
+            html.Div(children=[
                 html.Div(
+                    id='button-container',
+                    children=[
+                        html.Button(
+                            'Previous Date', id='prev-button', n_clicks=0
+                        ),
+                        html.Button(
+                            'Next Date', id='next-button', n_clicks=0
+                        ),
+                        html.Button(
+                            'Play', id='play-button', n_clicks=0
+                        )
+                    ]
+                )
+            ],
+                className='row'),
+            html.Div(children=[
+                html.Div(
+                    id="slider-container",
+                    children=[
+                        html.P(
+                            id="slider-text",
+                            children="Drag the slider to change the date:",
+                        ),
+                        dcc.Slider(
+                            id="days-slider",
+                            min=0,
+                            max=364,
+                            value=0,
+                            marks={
+                                str(x): {
+                                    "label": dates_list[x].date()
+                                }
+                                for x in range(0, 364, 30)
+                            },
+                        ),
+                    ],
+                    className='pretty_container twelve columns'
+                )],
+                className='row'),
+            html.Div(
                 id='toggle-container',
                 children=[
-             
+
                     html.Div(
                         dcc.Checklist(
                             id='heatmap-container-toggle',
@@ -280,7 +330,7 @@ app.layout = html.Div(
                         style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
-                           html.Div(
+                    html.Div(
                         dcc.Checklist(
                             id='bar_chart_div-toggle',
                             options=[
@@ -291,7 +341,6 @@ app.layout = html.Div(
                         ),
                         style={'padding': '5px', 'display': 'inline-block'},
                     ),
-
 
                     html.Div(
                         dcc.Checklist(
@@ -329,321 +378,430 @@ app.layout = html.Div(
                         style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
-                    html.Div(
-                        dcc.Checklist(
-                            id='notable-days-div-toggle',
-                            options=[
-                                {'label': 'Notable Days',
-                                 'value': 'on'},
-                            ],
-                            value=['on'],
-                        ),
-                        style={'padding': '5px', 'display': 'inline-block'},
-                    ),
-
-                    html.Div(
-                        dcc.Checklist(
-                            id='animated-charts-div-toggle',
-                            options=[
-                                {'label': 'Animated Charts',
-                                 'value': 'on'},
-                            ],
-                            value=['on'],
-                        ),
-                        style={'padding': '5px', 'display': 'inline-block'},
-                    ),
-
-                    html.Div(
-                        dcc.Checklist(
-                            id='popular-emojis-div-toggle',
-                            options=[
-                                {'label': 'Popular Emojis',
-                                 'value': 'on'},
-                            ],
-                            value=['on'],
-                        ),
-                        style={'padding': '5px', 'display': 'inline-block'},
-                    ),
-
-                    html.Div(
-                        dcc.Checklist(
-                            id='feature-correlation-div-toggle',
-                            options=[
-                                {'label': 'Correlation Between Features',
-                                 'value': 'on'},
-                            ],
-                            value=['on'],
-                        ),
-                        style={'padding': '5px', 'display': 'inline-block'},
-                    ),
                 ],
                 className='pretty_container'
             ),
-                html.Div(children=[
-                    html.Div(
-                        id="left-column",
-                        children=[
-                            html.Div(
-                                id="heatmap-container",
-                                children=[
+            html.Div(children=[
+                html.Div(
+                    id="left-column",
+                    children=[
+                        html.Div(
+                            id="heatmap-container",
+                            children=[
+                                html.H6(
+                                    "Heatmap of sentiment towards COVID-19 in the UK on day: ",
+                                    id="heatmap-title",
+                                ),
+                                dcc.Graph(
+                                    id='county-choropleth',
+                                    figure=fig_0
+                                ),
+                            ],
+                        ),
+                    ],
+                    className='pretty_container five columns'
+                ),
+
+                html.Div(
+                    id='bar_chart_div',
+                    children=[
+                        html.Div(
+                            id="bar-chart-container",
+                            children=[
+
+                                html.Div(children=[
                                     html.H6(
-                                        "Heatmap of sentiment towards COVID-19 in the UK on day: ",
-                                        id="heatmap-title",
+                                        children='Sentiment Count Per Day'
+                                    ),
+                                    dcc.Checklist(
+                                        id='sentiment_bar_chart_toggle',
+                                        options=[
+                                            {'label': 'Show/Hide',
+                                             'value': 'on'},
+                                        ],
+                                        value=['on']
+                                    ),
+
+                                    dcc.Graph(
+                                        id='sentiment_bar_chart'
+                                    ),
+                                    html.H6(
+                                        "Top Weekly Emojis",
+                                    ),
+                                    dcc.Checklist(
+                                        id='emoji-bar-chart-toggle',
+                                        options=[
+                                            {'label': 'Show/Hide',
+                                             'value': 'on'},
+                                        ],
+                                        value=['on']
                                     ),
                                     dcc.Graph(
-                                        id='county-choropleth',
-                                        figure=fig_0
-                                    ),
-                                ],
-                            ),
-                        ],
-                        className='pretty_container five columns'
-                    ),
-
-                    html.Div(
-                        id='bar_chart_div',
-                        children=[
-                            html.Div(
-                                id="bar-chart-container",
-                                children=[
-
-                                    html.Div(children=[
-                                        html.H6(
-                                            children='Sentiment Count Per Day'
-                                        ),
-                                        dcc.Checklist(
-                                            id='sentiment_bar_chart_toggle',
-                                            options=[
-                                                {'label': 'Show/Hide',
-                                                    'value': 'on'},
-                                            ],
-                                            value=['on']
-                                        ),
-
-                                        dcc.Graph(
-                                            id='sentiment_bar_chart'
-                                        ),
-                                        html.H6(
-                                            "Top Weekly Emojis",
-                                        ),
-                                        dcc.Checklist(
-                                            id='emoji-bar-chart-toggle',
-                                            options=[
-                                                {'label': 'Show/Hide',
-                                                    'value': 'on'},
-                                            ],
-                                            value=['on']
-                                        ),
-                                        dcc.Graph(
-                                            id='emoji-bar-chart',
-                                            figure=emoji_covid_fig
-                                        )
-                                    ],
-                                        className='pretty_container twelve columns'
+                                        id='emoji-bar-chart',
+                                        figure=emoji_covid_fig
                                     )
                                 ],
-                                className='row'
+                                    className='pretty_container twelve columns'
+                                )
+                            ],
+                            className='row'
 
-                            ),
-                        ],
-                        className='pretty_container four columns'
-                    ),
-                    html.Div(
-                        id='news-hashtag-div',
-                        children=[
-                            html.Div(
-                                children=[
-                                    html.Div(children=[
-                                        html.H6(
-                                            "Top News Stories",
-                                        ),
-                                        html.H6(
-                                            style={
-                                                "color": "#2a3f5f",
-                                                "fontSize": "13px",
-                                                "textAlign": "center",
-                                                "marginBottom": "50",
-                                            },
-                                        ),
-                                        dcc.Checklist(
-                                            id='daily-news-toggle',
-                                            options=[
-                                                {'label': 'Show/Hide',
-                                                    'value': 'on'},
-                                            ],
-                                            value=['on']
-                                        ),
-                                        dcc.Markdown(
-                                            id="daily-news",
-                                            style={
-                                                "padding": "10px 13px 5px 13px", "marginBottom": "5"},
-                                        ),
-                                        html.H6(
-                                            "Top 10 Hashtags",
-                                        ),
-                                        dcc.Checklist(
-                                            id='hashtag-table-toggle',
-                                            options=[
-                                                {'label': 'Show/Hide',
-                                                    'value': 'on'},
-                                            ],
-                                            value=['on']
-                                        ),
-                                        dcc.Graph(
-                                            id='hashtag-table'
-                                        ),
-                                    ],
-                                        className='pretty_container twelve columns'
-
+                        ),
+                    ],
+                    className='pretty_container four columns'
+                ),
+                html.Div(
+                    id='news-hashtag-div',
+                    children=[
+                        html.Div(
+                            children=[
+                                html.Div(children=[
+                                    html.H6(
+                                        "Top News Stories",
                                     ),
-
+                                    html.H6(
+                                        style={
+                                            "color": "#2a3f5f",
+                                            "fontSize": "13px",
+                                            "textAlign": "center",
+                                            "marginBottom": "50",
+                                        },
+                                    ),
+                                    dcc.Checklist(
+                                        id='daily-news-toggle',
+                                        options=[
+                                            {'label': 'Show/Hide',
+                                             'value': 'on'},
+                                        ],
+                                        value=['on']
+                                    ),
+                                    dcc.Markdown(
+                                        id="daily-news",
+                                        style={
+                                            "padding": "10px 13px 5px 13px", "marginBottom": "5"},
+                                    ),
+                                    html.H6(
+                                        "Top 10 Hashtags",
+                                    ),
+                                    dcc.Checklist(
+                                        id='hashtag-table-toggle',
+                                        options=[
+                                            {'label': 'Show/Hide',
+                                             'value': 'on'},
+                                        ],
+                                        value=['on']
+                                    ),
+                                    dcc.Graph(
+                                        id='hashtag-table'
+                                    ),
                                 ],
-                                className='row'
-                            )
+                                    className='pretty_container twelve columns'
 
-                        ],
-                        className="pretty_container four columns",
-                    ),
+                                ),
 
-                ],
-                    className='row'
-            ),
-                html.Div(
-                    id='covid-stats',
-                    children=[
-                        html.Div(
-                            id="covid-stats-container",
-                            children=[
-                                html.H6(
-                                    "Deaths and Cases Over Time",
-                                    id="stats-title",
-                                ),
-                                dcc.Graph(
-                                    id='stats-graph'
-                                ),
                             ],
-                            className='pretty_container six columns'
-
-                        ),
-                        html.Div(
-                            id="ma-sent-container",
-                            children=[
-                                html.H6(
-                                    "7 Day Moving Average of Covid Sentiment For Each Country\n(Starts at 2020-03-27)",
-                                    id="sent-vol-title",
-                                ),
-                                dcc.Graph(
-                                    id='ma-sent-graph'
-                                ),
-                            ],
-                            className='pretty_container six columns'
-
+                            className='row'
                         )
-                    ],
-                    className='row',
-                    style={'height': '850px'}
 
-            ),
-                html.Div(
-
-                    children=[
-                        html.H6(
-                            "Notable Days",
-                        ),
-                        dcc.Graph(
-                            id='notable-day-table'
-                        ),
                     ],
-                    className='pretty_container three columns'
+                    className="pretty_container four columns",
+                ),
+
+            ],
+                className='row'
             ),
-                html.Div(children=[
+            html.Div(
+                id='covid-stats',
+                children=[
                     html.Div(
-                        id="graph-container",
+                        id="covid-stats-container",
                         children=[
-                            html.P(id="chart-selector",
-                                   children="Select Animated Charts:"),
-                            dcc.Dropdown(
-                                options=[
-
-                                    {
-                                        "label": "7 Day MA COVID Sentiment vs Tweet Volume (Starts at 2020-03-27)",
-                                        "value": "show_sentiment_vs_time",
-                                    },
-
-                                    {
-                                        "label": "Comparison of Sentiment Generation Techniques (Starts at 2020-03-27)",
-                                        "value": "show_sentiment_comparison",
-                                    },
-                                ],
-                                value="show_sentiment_comparison",
-                                id="chart-dropdown",
+                            html.H6(
+                                "Deaths and Cases Over Time",
+                                id="stats-title",
                             ),
                             dcc.Graph(
-                                id='dropdown-figure'
+                                id='stats-graph'
                             ),
                         ],
-                        className='pretty_container twelve columns'
+                        className='pretty_container six columns'
+
+                    ),
+                    html.Div(
+                        id="ma-sent-container",
+                        children=[
+                            html.H6(
+                                "7 Day Moving Average of Covid Sentiment For Each Country\n(Starts at 2020-03-27)",
+                                id="sent-vol-title",
+                            ),
+                            dcc.Graph(
+                                id='ma-sent-graph'
+                            ),
+                        ],
+                        className='pretty_container six columns'
+
+                    )
+                ],
+                className='row',
+                style={'height': '850px'}
+
+            ),
+        ]
+    )
+]
+
+layout_analysis = [
+    dcc.Loading(html.Div(id='scatter-loading'),
+                loading_state={
+                    'component_name': 'app-container', 'is_loading': True},
+                fullscreen=True, type='graph'),
+    html.Div(
+        children=[
+            html.Div(
+                id="analysis-header",
+                children=[
+                    html.H2(
+                        children='Data Analysis and Exploration'
                     ),
                 ],
-                    className='row'
+                className='pretty_container twelve columns'
+            )
+        ],
+        className='row'
+    ),
+    html.Div(children=[
+        filters(),
+    ],
+        className='row'),
+    html.Div(children=[
+        html.H6(
+            "Notable Days",
+        ),
+        dcc.Graph(
+            id='notable-day-table'
+        ),
+    ],
+        className='pretty_container four columns'
+    ),
+    html.Div(children=[
+        html.Div(
+            id="graph-container",
+            children=[
+                html.P(id="chart-selector",
+                       children="Select Chart:"),
+                dcc.Dropdown(
+                    options=[
+
+                        {
+                            "label": "7 Day MA COVID Sentiment vs Tweet Volume (Starts at 2020-03-27)",
+                            "value": "show_sentiment_vs_time",
+                        },
+
+                        {
+                            "label": "Comparison of Sentiment Generation Techniques (Starts at 2020-03-27)",
+                            "value": "show_sentiment_comparison",
+                        },
+                    ],
+                    value="show_sentiment_comparison",
+                    id="chart-dropdown",
+                ),
+                dcc.Graph(
+                    id='dropdown-figure'
+                ),
+            ],
+            className='pretty_container twelve columns'
+        ),
+    ],
+        className='row'
+    ),
+    html.Div(
+        children=[
+            html.Div(
+                id='emoji-wordcloud-div',
+                children=[
+                    html.H4(
+                        children="Popular Emoji's"
+                    ),
+                    html.Img(
+                        id='emoji-wordcloud',
+                        src=app.get_asset_url(
+                            'covid_emoji_wordcloud.png'),
+                        style={
+                            'height': '400px',
+                            'width': '100%'
+                        })
+                ],
+                className='pretty_container four columns'
             ),
+            html.Div(
+                children=[
+                    html.H4(
+                        children=[
+                            'Correlation Between Features',
+                            dcc.Graph(
+                                id='corr-mat'
+                            ),
+                        ]
+                    )
+
+                ],
+                className='pretty_container eight columns'
+            )
+        ],
+        className='row'
+    )]
+
+layout_faq = [
+    html.Div(children=[
+        dcc.Loading(html.Div(id='scatter-loading'),
+                    loading_state={
+                        'component_name': 'app-container', 'is_loading': True},
+                    fullscreen=True, type='graph'),
+        html.Div(
+            children=[
                 html.Div(
                     children=[
-                        html.Div(
-                            id="analysis-header",
-                            children=[
-                                html.H2(
-                                    children='Data Analysis and Exploration'
-                                ),
-                            ],
+                        html.H4(
+                            "About this Dashboard",
+                        ),
+                        dcc.Markdown('''
+                        
+                        The  Coronavirus  (COVID-19)  pandemic  has  been at the forefront 
+                        of the global population’s concerns over the last year with the consequence 
+                        having a large impact on individuals daily  lives.  Twitter  is  one  of  the  largest 
+                         social  media  platforms where  people  from  all  over  the  country(and  the  world)  
+                         express their  opinions  regarding  a  wide  range  of  topics,  and  it  is  of
+                         no  surprise  that  there  has  been  a  surge  of  discussion  around
+                         pandemic  and  pandemic  adjacent  topics.
+                         
+                         The focus of this analysis is on ’tweet’s   posted   within   the   United
+                         Kingdom with the aim to measure the pulse of general sentiment
+                         towards COVID and lockdown over the past year. A multitude of sentiment analysis 
+                         techniques are applied to the data to measure sentiment  change  over  time.
+                         
+                         This dashboard  provides insight  and  visualises  the  change  in  language  expression  over  a year.
+                          Specifically, exploring reactions to relevant events combined with  COVID  statistics  
+                          within  the  UK.  Ultimately, with the aim  to make exploration and analysis of our
+                           data easily accessible to a nontechnical audience.
+                            
+                         The end-user will be able to compare the results of different sentiment techniques and how public opinion compares between 
+                          countries/regions in relation to the number of deaths, the number of cases, and certain pandemic related news events  over  the  last  year.
+                           
+                           Have fun :)!
+                        
+                        ''')
+
+                    ],
+                ),
+            ],
+            className='pretty_container five columns'
+        ),
+
+        html.Div(
+            id='bar_chart_div',
+            children=[
+                html.Div(
+                    id="bar-chart-container",
+                    children=[
+
+                        html.Div(children=[
+                            html.H4(
+                                children='Data Collected'
+                            ),
+                            dcc.Markdown(
+                                '''
+                                This dashboard contains two datasets corresponding to COVID and lockdown 
+                                related Tweets posted within the United Kingdom.
+                                
+                                Each dataset contains approximately 300 thousand tweets, starting from
+                                 the 20 March 2020 to the 25 March 2021.
+                                
+                                The keywords used to scrape the COVID dataset include:
+                                "coronavirus OR covid OR covid19 OR covid-19"
+                                
+                                The keyword used to scrape the lockdown dataset include:
+                                "lockdown"
+                                
+                                We used [SNScrape](https://github.com/JustAnotherArchivist/snscrape/tree/master/snscrape)
+                                , an open source wrapper of the Twitter API to collect historical 
+                                Tweets within the UK containing our key words over the past year.
+                                
+                                See Twitter's Developer Policy regarding API and content usage 
+                                [here](https://developer.twitter.com/en/developer-terms/agreement-and-policy).
+                                
+                                The news events were collected from the [Guardian News API](https://open-platform.theguardian.com/)
+                                
+                                The relavant COVID statistics were collected from the [Public Health England](https://coronavirus.data.gov.uk/)
+                                '''
+
+                            ),
+
+                            html.H4(
+                                "Sentiment Techniques",
+                            ),
+                            dcc.Markdown(
+                                '''
+                                This dashboard analyses and compares sentiment of tweet content using four 
+                                sentiment generating techniques:
+                                
+                                [Vader](https://github.com/cjhutto/vaderSentiment)
+                                
+                                [Naive Bayes](https://web.stanford.edu/~jurafsky/slp3/4.pdf)
+                                
+                                [LSTM](https://www.aclweb.org/anthology/O18-1021.pdf)
+                                
+                                [Textblob](https://github.com/sloria/TextBlob)
+                                
+                                
+                                '''
+
+                            ),
+                        ],
                             className='pretty_container twelve columns'
                         )
                     ],
                     className='row'
-            ),
+
+                ),
+            ],
+            className='pretty_container five columns'
+        ),
+        html.Div(
+            id='news-hashtag-div',
+            children=[
                 html.Div(
                     children=[
-                        html.Div(
-                            id='emoji-wordcloud-div',
-                            children=[
-                                html.H4(
-                                    children="Popular Emoji's"
-                                ),
-                                html.Img(
-                                    id='emoji-wordcloud',
-                                    src=app.get_asset_url(
-                                        'covid_emoji_wordcloud.png'),
-                                    style={
-                                        'height': '400px',
-                                        'width': '100%'
-                                    })
-                            ],
-                            className='pretty_container four columns'
+                        html.Div(children=[
+                            html.H4(
+                                "About the Authors",
+                            ),
+
+                            dcc.Markdown('''
+                            This was a project by a group of Undergraduates at the University of Bristol 
+                            composed of 2 Engineering Maths and 3 Computer Science Students.
+                            
+                            Specifically, this was for the Applied Data Science unit.
+                            
+                            ''')
+
+
+                        ],
+                            className='pretty_container twelve columns'
+
                         ),
-                        html.Div(
-                            children=[
-                                html.H4(
-                                    children=[
-                                        'Correlation Between Features',
-                                        dcc.Graph(
-                                            id='corr-mat'
-                                        ),
-                                    ]
-                                ),
-                                dcc.Loading(html.Div(id='scatter-loading'),
-                                            loading_state={
-                                                'component_name': 'app-container', 'is_loading': True},
-                                            fullscreen=True, type='graph')
-                            ],
-                            className='pretty_container eight columns'
-                        )
+
                     ],
                     className='row'
-            )
-            ]
-        )
-    ]
-)
+                )
+
+            ],
+            className="pretty_container three columns",
+        ),
+
+    ],
+        className='row'
+    ),
+]
 
 
 @app.callback(Output('r_number_indicator', 'children'), [Input("days-slider", "value")])
@@ -827,11 +985,11 @@ def display_news(day):
 
 @app.callback(
     Output('dropdown-figure', 'figure'),
-    [Input('days-slider', 'value'), Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'),
+    [Input('source-dropdown', 'value'), Input('nlp-dropdown', 'value'),
      Input('chart-dropdown', 'value')]
 )
-def dropdown_chart(day, topic, sentiment_type, chart_value):
-    selected_date = str(dates_list[day].date())
+def dropdown_chart(topic, sentiment_type, chart_value):
+    selected_date = end_global
     sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
     tweet_count_df = formatted_tweet_count[topic]
     tweet_sent_df = formatted_tweet_sent[topic]
@@ -869,9 +1027,9 @@ def update_emoji_bar_chart(selected_date, topic):
 
 
 # Loading Spinners
-@app.callback(Output('scatter-loading', 'children'), [Input('app-container', 'children')])
+@app.callback(Output('scatter-loading', 'children'), [Input('page-content', 'children')])
 def load(figure):
-    time.sleep(10)
+    time.sleep(2.5)
     return None
 
 
@@ -889,6 +1047,7 @@ def notable_days(topic, col):
 def emoji_wordcloud(topic):
     src = wordcloud_urls[topic]
     return app.get_asset_url(src)
+
 
 # collapse components
 
@@ -972,35 +1131,22 @@ def show_hide_element(visibility):
     return toggle_component(visibility)
 
 
-@app.callback(
-    Output("notable-day-table", "style"),
-    [Input("notable-days-div-toggle", "value")],
-)
-def show_hide_element(visibility):
-    return toggle_component(visibility)
-
-
-@app.callback(
-    Output("graph-container", "style"),
-    [Input("animated-charts-div-toggle", "value")],
-)
-def show_hide_element(visibility):
-    return toggle_component(visibility)
-
-
-@app.callback(
-    Output("emoji-wordcloud-div", "style"),
-    [Input("popular-emojis-div-toggle", "value")],
-)
-def show_hide_element(visibility):
-    return toggle_component(visibility)
-
-@app.callback(
-    Output("corr-mat", "style"),
-    [Input("feature-correlation-div-toggle", "value")],
-)
-def show_hide_element(visibility):
-    return toggle_component(visibility)
+@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+def render_page_content(pathname):
+    if pathname == "/":
+        return layout_main
+    elif pathname == "/page-1":
+        return layout_analysis
+    elif pathname == "/page-2":
+        return layout_faq
+    # If the user tries to reach a different page, return a 404 message
+    return dbc.Jumbotron(
+        [
+            html.H1("404: Not found", className="text-danger"),
+            html.Hr(),
+            html.P(f"The pathname {pathname} was not recognised..."),
+        ]
+    )
 
 
 if __name__ == '__main__':
