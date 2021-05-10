@@ -408,10 +408,6 @@ app.layout = html.Div(
                                     },
 
                                     {
-                                        "label": "Sentiment Variance",
-                                        "value": "show_sentiment_variance",
-                                    },
-                                    {
                                         "label": "Comparison of Sentiment Generation Techniques (Starts at 2020-03-27)",
                                         "value": "show_sentiment_comparison",
                                     },
@@ -553,25 +549,6 @@ def update_hashtag_table(selected_date, source):
     hash_df = pd.DataFrame(hash_dict)
     return plot_hashtag_table(hash_df)
 
-
-# @app.callback(
-#     [Output('days-slider', 'value'), Output('interval-component', 'disabled'), Output('play-button', 'children')],
-#     [Input('next-button', 'n_clicks'), Input('prev-button', 'n_clicks'), Input('next-button', 'n_clicks'),
-#      Input('interval-component', 'n_intervals')],
-#     [State('days-slider', 'value'), State('play-button', 'children')]
-# )
-# def button_pressed(inc_btn, dec_btn, play_btn, interval, day, play_txt):
-#     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-#     if 'next-button' in changed_id:
-#         if day < 364:
-#             return day + 1, False, play_txt
-#     if 'prev-button' in changed_id:
-#         if day > 0:
-#             return day - 1, False, play_txt
-#     if 'play-button' in changed_id:
-#         return day + 1, False, play_txt
-#     return day
-#
 
 @app.callback(
     [Output('interval-component', 'n_intervals'), Output('interval-component', 'disabled'),
