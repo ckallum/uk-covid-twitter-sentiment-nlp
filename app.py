@@ -22,6 +22,7 @@ from utils.plotting import plot_dropdown_sent_vs_vol, plot_covid_stats, plot_has
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+
 server = app.server
 app.title = 'Sentiment Towards COVID-19 in the UK'
 app.config.suppress_callback_exceptions = True
