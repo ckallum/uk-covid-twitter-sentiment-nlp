@@ -277,7 +277,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
                            html.Div(
@@ -289,7 +289,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
 
@@ -314,7 +314,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
                     html.Div(
@@ -326,7 +326,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
                     html.Div(
@@ -338,7 +338,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
                     html.Div(
@@ -350,7 +350,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
                     html.Div(
@@ -362,7 +362,7 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
 
                     html.Div(
@@ -374,10 +374,10 @@ app.layout = html.Div(
                             ],
                             value=['on'],
                         ),
-                        style={'display': 'inline-block'},
+                        style={'padding': '5px', 'display': 'inline-block'},
                     ),
                 ],
-                className='row'
+                className='pretty_container'
             ),
                 html.Div(children=[
                     html.Div(
