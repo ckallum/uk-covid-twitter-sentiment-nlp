@@ -213,7 +213,7 @@ def plot_sentiment_bar(df, sentiment_col, countries):
 
 
 def plot_corr_mat(df, sentiment_col):
-    df.rename(columns={sentiment_col: 'sentiment'}, inplace=True)
+    df = df.rename(columns={sentiment_col: 'sentiment'})
     fig = px.scatter_matrix(df,
                             dimensions=['sentiment', 'volume', 'cases', 'deaths'],
                             color='country'
