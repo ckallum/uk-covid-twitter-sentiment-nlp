@@ -164,9 +164,11 @@ def plot_sentiment(df_sent, sentiment_column, start, end):
 
 def plot_sentiment_comp(df_sent, start, end):
     df_sent = select_df_between_dates(df_sent, start, end)
+    df_sent = df_sent.rename(columns={'nn-score_avg': 'lstm', 'textblob-score_avg': 'textblob',
+                            'vader-score_avg': 'vader', 'native-score_avg': 'naive'})
     df = pd.melt(df_sent, id_vars=['date'],
-                 value_vars=['nn-score_avg', 'textblob-score_avg',
-                             'vader-score_avg', 'native-score_avg'],
+                 value_vars=['lstm', 'textblob',
+                             'vader', 'naive'],
                  var_name='sentiment_type',
                  value_name='sentiment_score'
                  )

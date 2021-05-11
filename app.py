@@ -189,7 +189,7 @@ def filters():
                         {"label": "LSTM", "value": "nn"},
                         {"label": 'Naive Bayes', "value": 'native'}
                     ],
-                    value="nn",
+                    value="vader",
                     clearable=False,
                 )],
                 className="pretty_container three columns",
