@@ -58,8 +58,10 @@ news_df = pd.read_csv('data/events/news_timeline.csv')
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 
 # Data Sources
-wordcloud_urls = {'covid': 'covid_emoji_wordcloud.png',
+emoji_wordcloud_urls = {'covid': 'covid_emoji_wordcloud.png',
                   'lockdown': 'lockdown_emoji_wordcloud.png'}
+wordcloud_urls = {'covid': 'covid_wordcloud.png',
+                  'lockdown': 'lockdown_wordcloud.png'}
 hashtag_data_sources = {'covid': hashtags_covid,
                         'lockdown': hashtags_lockdown}
 geo_df_data_sources = {'covid': geo_df_covid,
@@ -632,8 +634,19 @@ layout_analysis = [
                         src=app.get_asset_url(
                             'covid_emoji_wordcloud.png'),
                         style={
-                            'height': '400px',
-                            'width': '100%'
+                            'height': '200px',
+                            'width': '90%'
+                        }),
+                    html.H4(
+                        children="Popular Words's(Excluding Keywords)"
+                    ),
+                    html.Img(
+                        id='wordcloud',
+                        src=app.get_asset_url(
+                            'covid_wordcloud.png'),
+                        style={
+                            'height': '200px',
+                            'width': '90%'
                         })
                 ],
                 className='pretty_container four columns'
@@ -642,7 +655,7 @@ layout_analysis = [
                 children=[
                     html.H4(
                         children=[
-                            'Correlation Between Features',
+                            'Correlation Between Features(Scaled Volume, Deaths, Cases)',
                             dcc.Graph(
                                 id='corr-mat'
                             ),
@@ -1052,9 +1065,14 @@ def notable_days(topic, col):
 @app.callback(Output('emoji-wordcloud', 'src'),
               Input('source-dropdown', 'value'))
 def emoji_wordcloud(topic):
-    src = wordcloud_urls[topic]
+    src = emoji_wordcloud_urls[topic]
     return app.get_asset_url(src)
 
+@app.callback(Output('wordcloud', 'src'),
+              Input('source-dropdown', 'value'))
+def wordcloud(topic):
+    src = wordcloud_urls[topic]
+    return app.get_asset_url(src)
 
 # collapse components
 

@@ -2,7 +2,6 @@ from functools import reduce
 import pandas as pd
 import datetime
 from sklearn.preprocessing import StandardScaler
-import sklearn
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from utils.aggregations import aggregate_all_sentiments_per_day_per_country, aggregate_vol_per_day_per_country, \
     aggregate_stats_per_day_per_country, notable_month_by_sent_label, notable_months_count, notable_days_count, \
