@@ -1158,4 +1158,6 @@ def render_page_content(pathname):
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-# TODO
+
+    # df = format_df_corr(geo_df_covid, tweet_count_covid, df_covid_stats, [str(date.date()) for date in dates_list])
+    # df.to_csv('data/lockdown/scatter.csv')

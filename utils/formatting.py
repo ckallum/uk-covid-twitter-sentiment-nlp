@@ -1,7 +1,7 @@
-import json
 from functools import reduce
 import pandas as pd
 import datetime
+from sklearn.preprocessing import StandardScaler
 from utils.aggregations import aggregate_sentiment_by_region_type_by_date
 from utils.aggregations import aggregate_all_sentiments_per_day_per_country, aggregate_vol_per_day_per_country, \
     aggregate_stats_per_day_per_country, notable_month_by_sent_label, notable_months_count, notable_days_count, \
@@ -43,6 +43,8 @@ def format_df_corr(df_sent, df_count, df_stats, dates_list):
     counts_per_day_per_country = aggregate_vol_per_day_per_country(df_count, dates_list, countries)
     deaths_per_day_per_country = aggregate_stats_per_day_per_country(df_stats, countries, death_str, dates_list)
     cases_per_day_per_country = aggregate_stats_per_day_per_country(df_stats, countries, case_str, dates_list)
+    scaler = StandardScaler()
+
     df_dict = dict(
         country=reduce(lambda x, y: x + y, [countries for _ in range(len(dates_list))]),
         volume=counts_per_day_per_country,
@@ -50,6 +52,9 @@ def format_df_corr(df_sent, df_count, df_stats, dates_list):
         deaths=cases_per_day_per_country
     )
     df = pd.DataFrame(df_dict)
+    for country in countries:
+        df.loc[df['country'] == country, ['volume', 'cases', 'deaths']] = scaler.fit_transform(
+            df.loc[df['country'] == country, ['volume', 'cases', 'deaths']])
     sentiments_per_day_per_country.reset_index(inplace=True)
     res_df = pd.concat([df, sentiments_per_day_per_country], axis=1)
     return res_df
@@ -95,12 +100,12 @@ def format_df_ma_sent(df):
 def format_df_ma_sent_comp(df):
     df = aggregate_sentiment_by_date(df, start_global, end_global)
     if len(df.index) < 7:
-        df[avg_cols] = df.loc[:,avg_cols].rolling(
+        df[avg_cols] = df.loc[:, avg_cols].rolling(
             window=len(df.index)).mean().dropna()  # 7 Day MA
     else:
-        df[avg_cols] = df.loc[:,avg_cols].rolling(
+        df[avg_cols] = df.loc[:, avg_cols].rolling(
             window=MA_win).mean().dropna()  # 7 Day MA
-    df['date']=str_dates_list
+    df['date'] = str_dates_list
     return df
 
 
