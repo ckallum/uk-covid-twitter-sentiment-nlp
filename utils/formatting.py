@@ -49,8 +49,8 @@ def format_df_corr(df_sent, df_count, df_stats, dates_list):
     df_dict = dict(
         country=reduce(lambda x, y: x + y, [countries for _ in range(len(dates_list))]),
         volume=counts_per_day_per_country,
-        cases=deaths_per_day_per_country,
-        deaths=cases_per_day_per_country
+        deaths=deaths_per_day_per_country,
+        cases=cases_per_day_per_country
     )
     df = pd.DataFrame(df_dict)
     for country in countries:
