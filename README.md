@@ -1,4 +1,6 @@
 # ads-web-app
+## Introduction
+This the web application for the Applied Data Science group project at the University of Bristol(2020-21). The aim was to look at sentiment of tweets within the UK during the period of a year when Covid-19 was present and see if there was a correlation to certain news articles, and how different regions within the UK differed over time.
 
 ## Downloading and running
 
