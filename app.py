@@ -747,7 +747,7 @@ layout_faq = [
                                 The keyword used to scrape the lockdown dataset include:
                                 "lockdown"
                                 
-                                We used [SNScrape](https://github.com/JustAnotherArchivist/snscrape/tree/master/snscrape)
+                                I used [SNScrape](https://github.com/JustAnotherArchivist/snscrape/tree/master/snscrape)
                                 , an open source wrapper of the Twitter API to collect historical 
                                 Tweets within the UK containing our key words over the past year.
                                 
