@@ -25,36 +25,63 @@ from utils.plotting import (
 # Define the base directory using pathlib for cross-platform compatibility
 BASE_DIR = Path(__file__).resolve().parent
 
+# For Heroku deployment - debug missing files
+print(f"Using BASE_DIR: {BASE_DIR}")
+print(f"Files in data directory: {list(Path(BASE_DIR / 'data').glob('**/*.json'))}")
+
 app = Flask(__name__, static_folder="static")
 
 # READ DATA - use absolute paths with Path
-df_covid_stats = pd.read_csv(
-    BASE_DIR / 'data/covid-data/uk_covid_stats.csv', skipinitialspace=True)
-uk_counties = json.load(open(BASE_DIR / 'data/geojson/uk_counties_simpler.json', 'r'))
-r_numbers = pd.read_csv(BASE_DIR / 'data/covid-data/r_numbers.csv')
-df_events = pd.read_csv(BASE_DIR / 'data/events/key_events.csv',
-                        skipinitialspace=True, usecols=['Date', 'Event'])
-counties = pd.read_csv(
-    BASE_DIR / 'data/geojson/uk-district-list-all.csv')['county'].tolist()
-hashtags_covid = pd.read_csv(BASE_DIR / 'data/covid/top_ten_hashtags_per_day.csv')
-hashtags_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/top_ten_hashtags_per_day.csv')
-geo_df_covid = pd.read_csv(
-    BASE_DIR / 'data/covid/daily_sentiment_county_updated_locations.csv')
-geo_df_lockdown = pd.read_csv(
-    BASE_DIR / 'data/lockdown/daily_sentiment_county_updated_locations.csv')
-tweet_count_covid = pd.read_csv(BASE_DIR / 'data/covid/daily_tweet_count_country.csv')
-tweet_count_lockdown = pd.read_csv(
-    BASE_DIR / 'data/lockdown/daily_tweet_count_country.csv')
-all_sentiments_covid = pd.read_csv(BASE_DIR / 'data/covid/all_tweet_sentiments.csv')
-all_sentiments_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/all_tweet_sentiments.csv')
-notable_days_covid = pd.read_csv(BASE_DIR / 'data/covid/notable_days_months.csv')
-notable_days_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/notable_days_months.csv')
-scatter_covid = pd.read_csv(BASE_DIR / 'data/covid/scatter.csv')
-scatter_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/scatter.csv')
+try:
+    # Try to load all data files, with proper error handling
+    geojson_path = BASE_DIR / 'data/geojson/uk_counties_simpler.json'
+    print(f"Checking if GeoJSON file exists: {geojson_path.exists()}")
+    
+    df_covid_stats = pd.read_csv(
+        BASE_DIR / 'data/covid-data/uk_covid_stats.csv', skipinitialspace=True)
+    
+    with open(geojson_path, 'r') as f:
+        uk_counties = json.load(f)
+        
+    r_numbers = pd.read_csv(BASE_DIR / 'data/covid-data/r_numbers.csv')
+    df_events = pd.read_csv(BASE_DIR / 'data/events/key_events.csv',
+                          skipinitialspace=True, usecols=['Date', 'Event'])
+    counties = pd.read_csv(
+        BASE_DIR / 'data/geojson/uk-district-list-all.csv')['county'].tolist()
+except Exception as e:
+    print(f"Error loading data files: {e}")
+    # Create empty data structures as fallback
+    uk_counties = {}
+    counties = []
+    r_numbers = pd.DataFrame()
+try:
+    hashtags_covid = pd.read_csv(BASE_DIR / 'data/covid/top_ten_hashtags_per_day.csv')
+    hashtags_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/top_ten_hashtags_per_day.csv')
+    geo_df_covid = pd.read_csv(
+        BASE_DIR / 'data/covid/daily_sentiment_county_updated_locations.csv')
+    geo_df_lockdown = pd.read_csv(
+        BASE_DIR / 'data/lockdown/daily_sentiment_county_updated_locations.csv')
+    tweet_count_covid = pd.read_csv(BASE_DIR / 'data/covid/daily_tweet_count_country.csv')
+    tweet_count_lockdown = pd.read_csv(
+        BASE_DIR / 'data/lockdown/daily_tweet_count_country.csv')
+    all_sentiments_covid = pd.read_csv(BASE_DIR / 'data/covid/all_tweet_sentiments.csv')
+    all_sentiments_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/all_tweet_sentiments.csv')
+    notable_days_covid = pd.read_csv(BASE_DIR / 'data/covid/notable_days_months.csv')
+    notable_days_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/notable_days_months.csv')
+    scatter_covid = pd.read_csv(BASE_DIR / 'data/covid/scatter.csv')
+    scatter_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/scatter.csv')
 
-emojis_covid = pd.read_csv(BASE_DIR / 'data/covid/weekly_emojis_with_colours.csv')
-emojis_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/weekly_emojis_with_colours.csv')
-news_df = pd.read_csv(BASE_DIR / 'data/events/news_timeline.csv')
+    emojis_covid = pd.read_csv(BASE_DIR / 'data/covid/weekly_emojis_with_colours.csv')
+    emojis_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/weekly_emojis_with_colours.csv')
+    news_df = pd.read_csv(BASE_DIR / 'data/events/news_timeline.csv')
+except Exception as e:
+    print(f"Error loading additional data files: {e}")
+    # Create empty DataFrames as fallback
+    hashtags_covid = hashtags_lockdown = geo_df_covid = geo_df_lockdown = \
+    tweet_count_covid = tweet_count_lockdown = all_sentiments_covid = \
+    all_sentiments_lockdown = notable_days_covid = notable_days_lockdown = \
+    scatter_covid = scatter_lockdown = emojis_covid = emojis_lockdown = \
+    news_df = pd.DataFrame()
 
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 
@@ -85,16 +112,24 @@ notable_days_sources = {'covid': notable_days_covid,
                         'lockdown': notable_days_lockdown}
 
 scatter_sources = {'covid': scatter_covid, 'lockdown': scatter_lockdown}
-# Formatted
-formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, countries),
-                         'lockdown': format_df_ma_tweet_vol(tweet_count_lockdown, countries)}
-formatted_tweet_sent = {'covid': format_df_ma_sent(
-    geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
-
-formatted_covid_stats = format_df_ma_stats(df_covid_stats, countries)
-
-formatted_sent_comp = {'covid': format_df_ma_sent_comp(all_sentiments_covid),
-                       'lockdown': format_df_ma_sent_comp(all_sentiments_lockdown)}
+# Formatted - wrapped in try/except to handle errors gracefully
+try:
+    formatted_tweet_count = {'covid': format_df_ma_tweet_vol(tweet_count_covid, countries),
+                            'lockdown': format_df_ma_tweet_vol(tweet_count_lockdown, countries)}
+    formatted_tweet_sent = {'covid': format_df_ma_sent(
+        geo_df_covid), 'lockdown': format_df_ma_sent(geo_df_lockdown)}
+    
+    formatted_covid_stats = format_df_ma_stats(df_covid_stats, countries)
+    
+    formatted_sent_comp = {'covid': format_df_ma_sent_comp(all_sentiments_covid),
+                          'lockdown': format_df_ma_sent_comp(all_sentiments_lockdown)}
+except Exception as e:
+    print(f"Error formatting data: {e}")
+    # Create empty defaults
+    formatted_tweet_count = {'covid': pd.DataFrame(), 'lockdown': pd.DataFrame()}
+    formatted_tweet_sent = {'covid': pd.DataFrame(), 'lockdown': pd.DataFrame()}
+    formatted_covid_stats = pd.DataFrame()
+    formatted_sent_comp = {'covid': pd.DataFrame(), 'lockdown': pd.DataFrame()}
 
 emojis_weekly_source = {'covid': emojis_covid, 'lockdown': emojis_lockdown}
 
@@ -140,6 +175,11 @@ def fig_to_json(fig):
         'layout': sanitized_dict['layout']
     }
 
+# Add health check route
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "ok"})
+
 # Serve static files from the static directory
 @app.route('/')
 def index():
@@ -150,6 +190,35 @@ def static_files(path):
     return send_from_directory(BASE_DIR / 'static', path)
 
 # API Routes
+
+@app.route('/debug')
+def debug_info():
+    """Debug endpoint to verify app is running and check file existence"""
+    try:
+        file_info = {}
+        for path in [
+            'data/geojson/uk_counties_simpler.json',
+            'data/covid-data/uk_covid_stats.csv',
+            'data/covid-data/r_numbers.csv',
+            'data/covid/top_ten_hashtags_per_day.csv'
+        ]:
+            full_path = BASE_DIR / path
+            file_info[path] = {
+                'exists': full_path.exists(),
+                'size': full_path.stat().st_size if full_path.exists() else 0
+            }
+        
+        return jsonify({
+            'status': 'app is running',
+            'base_dir': str(BASE_DIR),
+            'files': file_info,
+            'env': dict(os.environ)
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        })
 
 @app.route('/api/dates')
 def get_dates():
