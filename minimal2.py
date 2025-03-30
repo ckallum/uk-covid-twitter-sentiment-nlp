@@ -21,9 +21,10 @@ def health_check():
 @app.route('/debug')
 def debug():
     """Debug endpoint to check file paths"""
-    # Check for critical data files
+    # Check both case variations (case sensitive vs case insensitive filesystems)
     data_files = [
         'data/geojson/uk_counties_simpler.json',
+        'data/Geojson/uk_counties_simpler.json',
         'data/covid-data/uk_covid_stats.csv',
         'data/covid-data/r_numbers.csv',
         'data/covid/top_ten_hashtags_per_day.csv'
@@ -37,12 +38,22 @@ def debug():
             'size': full_path.stat().st_size if full_path.exists() else 0
         }
     
-    # List directories to see what's available
-    dir_listing = {
-        'data': os.listdir(BASE_DIR / 'data') if (BASE_DIR / 'data').exists() else [],
-        'data/covid': os.listdir(BASE_DIR / 'data/covid') if (BASE_DIR / 'data/covid').exists() else [],
-        'data/geojson': os.listdir(BASE_DIR / 'data/geojson') if (BASE_DIR / 'data/geojson').exists() else []
+    # List directories to see what's available (checking both case variations)
+    dir_variations = {
+        'data': ['data'],
+        'data/covid': ['data/covid'],
+        'data/geojson': ['data/geojson', 'data/Geojson', 'data/GeoJSON']
     }
+    
+    dir_listing = {}
+    for dir_key, variations in dir_variations.items():
+        for variant in variations:
+            path = BASE_DIR / variant
+            if path.exists():
+                dir_listing[variant] = os.listdir(path)
+                break
+        if dir_key not in dir_listing:
+            dir_listing[dir_key] = []
     
     return jsonify({
         "status": "ok",
@@ -55,17 +66,31 @@ def debug():
 def test_data():
     """Try to load just one data file"""
     try:
-        counties_path = BASE_DIR / 'data/geojson/uk-district-list-all.csv'
-        result = {'status': 'loading'}
+        # Try different case variations of the path
+        case_variations = [
+            'data/geojson/uk-district-list-all.csv',
+            'data/Geojson/uk-district-list-all.csv'
+        ]
         
-        if counties_path.exists():
+        result = {'status': 'loading', 'checked_paths': []}
+        
+        counties_path = None
+        for path_str in case_variations:
+            path = BASE_DIR / path_str
+            result['checked_paths'].append({'path': str(path), 'exists': path.exists()})
+            if path.exists():
+                counties_path = path
+                break
+        
+        if counties_path:
             # Try to load the counties data
             counties_df = pd.read_csv(counties_path)
             counties = counties_df['county'].tolist()
             result['counties'] = counties[:10]  # Show first 10 counties
             result['status'] = 'success'
+            result['used_path'] = str(counties_path)
         else:
-            result['error'] = f"File not found: {counties_path}"
+            result['error'] = f"File not found in any of the checked paths"
         
         return jsonify(result)
     except Exception as e:
@@ -84,6 +109,36 @@ def favicon():
     
     # Fallback
     return "", 204
+
+@app.route('/list-files')
+def list_files():
+    """List all data files recursively"""
+    try:
+        data_path = BASE_DIR / 'data'
+        
+        def walk_directory(path):
+            result = []
+            if not path.exists():
+                return result
+            
+            for item in path.iterdir():
+                if item.is_file():
+                    result.append(str(item.relative_to(BASE_DIR)))
+                elif item.is_dir():
+                    result.extend(walk_directory(item))
+            return result
+        
+        all_files = walk_directory(data_path)
+        return jsonify({
+            'status': 'success',
+            'file_count': len(all_files),
+            'files': all_files
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        })
 
 @app.route('/')
 def index():
@@ -119,6 +174,7 @@ def index():
             <a href="/health" class="btn">Health Check</a>
             <a href="/debug" class="btn">Debug Info</a>
             <a href="/test-data" class="btn">Test Data Loading</a>
+            <a href="/list-files" class="btn">List All Files</a>
         </div>
     </body>
     </html>
