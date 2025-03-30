@@ -3,6 +3,7 @@ API backend for COVID-19 Sentiment Dashboard
 """
 import json
 import re
+import os
 import datetime
 import pandas as pd
 import plotly.express as px
@@ -373,4 +374,6 @@ def get_corr_mat():
     return jsonify(fig_to_json(fig))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get port from environment variable (for Heroku compatibility)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

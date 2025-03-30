@@ -122,9 +122,43 @@ This application has been designed with a clean separation between frontend and 
 ### Option 1: Full Stack Deployment
 
 Deploy both the Python backend and the web frontend together on platforms like:
-- Heroku
+- Heroku (see detailed instructions below)
 - PythonAnywhere
 - AWS Elastic Beanstalk
+
+#### Heroku Deployment
+
+1. Make sure you have the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) installed.
+
+2. Login to Heroku:
+   ```bash
+   heroku login
+   ```
+
+3. Create a new Heroku app:
+   ```bash
+   heroku create your-app-name
+   ```
+
+4. Push code to Heroku:
+   ```bash
+   git push heroku main
+   ```
+
+5. Scale web dynos:
+   ```bash
+   heroku ps:scale web=1
+   ```
+
+6. Visit your app:
+   ```bash
+   heroku open
+   ```
+
+Note: This application is already configured for Heroku with:
+- Procfile: Specifies `web: gunicorn app:server`
+- runtime.txt: Specifies Python version
+- Required packages in requirements.txt
 
 ### Option 2: Static Frontend + API Backend
 
