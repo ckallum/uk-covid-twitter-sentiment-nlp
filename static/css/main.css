@@ -1,0 +1,306 @@
+/* Base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f9f9f9;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar styles */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 16rem;
+  height: 100%;
+  z-index: 1;
+  overflow-x: hidden;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-right: 1px solid #ddd;
+}
+
+.sidebar h2 {
+  margin-bottom: 10px;
+  color: #2a3f5f;
+}
+
+.sidebar hr {
+  margin-bottom: 20px;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  margin-bottom: 15px;
+}
+
+.sidebar .nav-link {
+  display: block;
+  padding: 10px;
+  color: #2a3f5f;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background-color: #e6f2ff;
+  font-weight: bold;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  margin-left: 18rem;
+  padding: 2rem;
+}
+
+/* Page visibility */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+/* Container styles */
+.pretty-container {
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+/* Chart containers */
+.chart {
+  width: 100%;
+  min-height: 300px;
+  margin-top: 10px;
+}
+
+/* Typography */
+h2 {
+  color: #2a3f5f;
+  margin-bottom: 15px;
+}
+
+h4, h6 {
+  color: #2a3f5f;
+  margin-bottom: 10px;
+}
+
+p {
+  margin-bottom: 12px;
+}
+
+a {
+  color: #119DFF;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Indicators */
+.indicators {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.indicators .pretty-container {
+  flex: 1;
+  margin-right: 10px;
+  text-align: center;
+}
+
+.indicators .pretty-container:last-child {
+  margin-right: 0;
+}
+
+.info-text {
+  color: #7f7f7f;
+  font-size: 14px;
+}
+
+.indicator-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2a3f5f;
+}
+
+/* Form elements */
+select, button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+select {
+  width: 100%;
+}
+
+button {
+  cursor: pointer;
+  background-color: #119DFF;
+  color: white;
+  border: none;
+  margin-right: 10px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #0d7dd1;
+}
+
+#button-container {
+  margin: 15px 0;
+}
+
+/* Filters row */
+.filters-row {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.filters-row .pretty-container {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.filters-row .pretty-container:last-child {
+  margin-right: 0;
+}
+
+/* Toggle container */
+#toggle-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#toggle-container > div {
+  margin-right: 15px;
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+/* Data rows */
+.data-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.data-row > .pretty-container {
+  flex: 1;
+  margin-right: 15px;
+  min-width: 300px;
+}
+
+.data-row > .pretty-container:last-child {
+  margin-right: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .data-row {
+    flex-direction: column;
+  }
+  
+  .data-row > .pretty-container {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .content {
+    margin-left: 0;
+  }
+  
+  .indicators {
+    flex-direction: column;
+  }
+  
+  .indicators .pretty-container {
+    margin-right: 0;
+  }
+  
+  .filters-row {
+    flex-direction: column;
+  }
+  
+  .filters-row .pretty-container {
+    margin-right: 0;
+  }
+}
+
+/* Slider styles */
+.slider-container {
+  width: 100%;
+  padding: 10px 20px;
+}
+
+#days-slider {
+  height: 20px;
+  margin: 25px 0;
+}
+
+/* Image containers */
+#emoji-wordcloud, #wordcloud {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 20px;
+}
+
+/* Tables */
+#daily-news {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #eee;
+  margin-bottom: 15px;
+}
+
+/* Utility classes */
+.hidden {
+  display: none;
+}

@@ -61,51 +61,123 @@ def format_df_corr(df_sent, df_count, df_stats, dates_list):
 
 
 def format_df_ma_stats(data, region_list):
+    # Create a full copy of the dataframe to avoid modifying the original
     data = data.copy()
+    
+    # First, convert the columns we'll be working with to float64 for the entire dataframe
+    # This ensures we don't have dtype compatibility issues
+    for col in [death_str, case_str]:
+        if col in data.columns:
+            data[col] = data[col].astype('float64')
+    
     for region in region_list:
+        region_mask = data['country'] == region
+        
         if len(data.index) < 7:
-            data.loc[data['country'] == region, [death_str, case_str]] = data.loc[
-                data['country'] == region, [death_str, case_str]].rolling(
-                window=1).mean().dropna()  # 7 Day MA
+            window_size = 1  # 1 day window for small datasets
         else:
-            data.loc[data['country'] == region, [death_str, case_str]] = data.loc[
-                data['country'] == region, [death_str, case_str]].rolling(
-                window=MA_win).mean().dropna()
+            window_size = MA_win  # 7 Day MA
+            
+        # Create a separate DataFrame for the rolling calculations
+        region_data = data.loc[region_mask, [death_str, case_str]].copy()
+        
+        # Perform rolling mean on the region data
+        if not region_data.empty:
+            # Apply rolling mean
+            rolling_data = region_data.rolling(window=window_size).mean()
+            
+            # For each column, update the original data with the rolling mean values
+            for col in [death_str, case_str]:
+                # Get the rolling mean values, replacing NaN with 0
+                rolling_values = rolling_data[col].fillna(0)
+                
+                # Update the original data
+                data.loc[region_mask, col] = rolling_values
+    
     return data
 
 
 def format_df_ma_tweet_vol(data, region_list):
+    # Create a new dataframe to store results
     new_data = data.copy()
+    
+    # First, ensure all region columns are float64
     for region in region_list:
-        if len(data.index) < 7:
-            new_data.loc[:, region] = data.loc[:, region].rolling(window=len(data.index)).mean().dropna()
-        else:
-            new_data.loc[:, region] = data.loc[:, region].rolling(window=MA_win).mean().dropna()
+        if region in new_data.columns:
+            new_data[region] = new_data[region].astype('float64')
+    
+    for region in region_list:
+        # Determine window size
+        window_size = MA_win if len(data.index) >= 7 else len(data.index)
+        
+        # Create a Series for the region data
+        region_data = data[region].astype('float64')
+        
+        # Calculate rolling mean
+        rolling_mean = region_data.rolling(window=window_size).mean()
+        
+        # Replace NaN values with 0 and assign to new dataframe
+        new_data[region] = rolling_mean.fillna(0)
+    
+    # Remove any remaining NaN rows
     return new_data.dropna()
 
 
 def format_df_ma_sent(df):
+    # Get data and make a copy
     df = aggregate_sentiment_by_region_type_by_date(df, countries, 'country', start_global,
-                                                    end_global).copy()
+                                                   end_global).copy()
+    
+    # First, ensure all avg_cols are float64 type across entire dataframe
+    for col in avg_cols:
+        df[col] = df[col].astype('float64')
+    
+    # Process each region
     for region in df['region_name'].unique():
-        if len(df.index) < 7:
-            df.loc[df['region_name'] == region, avg_cols] = df.loc[df['region_name'] == region, avg_cols].rolling(
-                window=len(df.index)).mean().dropna()  # 7 Day MA
-        else:
-            df.loc[df['region_name'] == region, avg_cols] = df.loc[df['region_name'] == region, avg_cols].rolling(
-                window=MA_win).mean().dropna()  # 7 Day MA
+        # Create mask for the region
+        region_mask = df['region_name'] == region
+        
+        # Determine window size based on dataframe length
+        window_size = MA_win if len(df) >= 7 else len(df)
+        
+        # For each sentiment column
+        for col in avg_cols:
+            # Extract the values for this region and column
+            region_values = df.loc[region_mask, col]
+            
+            # Calculate rolling mean
+            rolling_values = region_values.rolling(window=window_size).mean()
+            
+            # Replace NaN with 0 and assign back
+            df.loc[region_mask, col] = rolling_values.fillna(0)
+    
     return df
 
 
 def format_df_ma_sent_comp(df):
+    # Get the aggregated data
     df = aggregate_sentiment_by_date(df, start_global, end_global)
-    if len(df.index) < 7:
-        df[avg_cols] = df.loc[:, avg_cols].rolling(
-            window=len(df.index)).mean().dropna()  # 7 Day MA
-    else:
-        df[avg_cols] = df.loc[:, avg_cols].rolling(
-            window=MA_win).mean().dropna()  # 7 Day MA
+    
+    # Determine window size based on dataframe length
+    window_size = MA_win if len(df) >= 7 else len(df)
+    
+    # Ensure all avg_cols are float64 type
+    for col in avg_cols:
+        if col in df.columns:
+            df[col] = df[col].astype('float64')
+    
+    # Process each column separately
+    for col in avg_cols:
+        if col in df.columns:
+            # Calculate rolling mean
+            rolling_values = df[col].rolling(window=window_size).mean()
+            
+            # Replace NaN with 0 and assign back
+            df[col] = rolling_values.fillna(0)
+    
+    # Add the date column
     df['date'] = str_dates_list
+    
     return df
 
 

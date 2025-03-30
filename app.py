@@ -28,13 +28,13 @@ app.title = 'Sentiment Towards COVID-19 in the UK'
 app.config.suppress_callback_exceptions = True
 # READ DATA
 df_covid_stats = pd.read_csv(
-    'data/COVID-Dataset/uk_covid_stats.csv', skipinitialspace=True)
-uk_counties = json.load(open('data/Geojson/uk_counties_simpler.json', 'r'))
-r_numbers = pd.read_csv('data/COVID-Dataset/r_numbers.csv')
+    'data/covid-data/uk_covid_stats.csv', skipinitialspace=True)
+uk_counties = json.load(open('data/geojson/uk_counties_simpler.json', 'r'))
+r_numbers = pd.read_csv('data/covid-data/r_numbers.csv')
 df_events = pd.read_csv('data/events/key_events.csv',
                         skipinitialspace=True, usecols=['Date', 'Event'])
 counties = pd.read_csv(
-    'data/Geojson/uk-district-list-all.csv')['county'].tolist()
+    'data/geojson/uk-district-list-all.csv')['county'].tolist()
 hashtags_covid = pd.read_csv('data/covid/top_ten_hashtags_per_day.csv')
 hashtags_lockdown = pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')
 geo_df_covid = pd.read_csv(
@@ -793,18 +793,13 @@ layout_faq = [
                     children=[
                         html.Div(children=[
                             html.H4(
-                                "About the Creators",
+                                "About the Creator",
                             ),
 
                             dcc.Markdown('''
-                            This was a project by a group of Undergraduates at the University of Bristol 
-                            composed of 2 Engineering Maths and 3 Computer Science Students.
-                            
-                            Specifically, this was for the Applied Data Science unit.
+                            This was a project to understand(prove a point) about how certain event's shifted sentiment(across Twitter) over different georgraphic and political UK counties during COVID.
                             
                             ''')
-
-
                         ],
                             className='pretty_container twelve columns'
 
@@ -830,7 +825,10 @@ def update_r_text(date_index):
     for i, (start, end) in enumerate(week_pairs):
         if check_between_dates(start, end, selected_date):
             df = r_numbers.loc[r_numbers['date'] == start]
-            avg_r = round(float((df['upper'] + df['lower']) / 2), 2)
+            # Fix dtype incompatibility by properly accessing Series elements
+            upper = df['upper'].iloc[0] if not df['upper'].empty else 0
+            lower = df['lower'].iloc[0] if not df['lower'].empty else 0
+            avg_r = round((upper + lower) / 2, 2)
             if avg_r == 0:
                 return 'N/A'
             return "~{}".format(avg_r)
@@ -893,7 +891,7 @@ def update_hashtag_table(selected_date, source):
     hash_dict = {'Hashtag': [], 'Count': []}
     for hashtag, count in hashtags:
         hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
-        hash_dict['Count'].append(count)
+        hash_dict['Count'].append(int(count))
     hash_df = pd.DataFrame(hash_dict)
     return plot_hashtag_table(hash_df)
 

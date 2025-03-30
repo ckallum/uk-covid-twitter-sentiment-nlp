@@ -81,8 +81,12 @@ def aggregate_sentiment_by_region_type_by_date(data, region_list, region_header,
             regions.append(region)
             for i, prediction_version in enumerate(avg_score_columns):
                 if not region_data.empty:
-                    score_by_region[prediction_version].append(
-                        region_data[prediction_version].mean())
+                    # Replace NaN with 0.0
+                    val = region_data[prediction_version].mean()
+                    score_by_region[prediction_version].append(0.0 if pd.isna(val) else val)
+                else:
+                    # If no data, use 0.0 as default
+                    score_by_region[prediction_version].append(0.0)
     full_data = pd.concat(
         [pd.DataFrame({'date': dates}), pd.DataFrame({'region_name': regions}),
          pd.DataFrame(score_by_region)], axis=1)
@@ -108,10 +112,14 @@ def aggregate_sentiment_by_date(data,
     data['date'] = pd.to_datetime(data.date)
     for date in date_list:
         date_data = data.loc[data['date'] == date]
+        dates.append(date)
         for i, (k, prediction_version) in enumerate(score_columns.items()):
             if not date_data.empty:
                 score_by_day[avg_score_columns[i]].append(
                     date_data[prediction_version].mean())
+            else:
+                # If no data for this date, use 0 as default
+                score_by_day[avg_score_columns[i]].append(0.0)
 
     full_data = pd.concat(
         [pd.DataFrame({'date': dates}),
@@ -125,7 +133,11 @@ def aggregate_all_sentiments_per_day_per_country(df_sent, dates, countries):
         date_df = df_sent.loc[df_sent['date'] == date]
         for country in countries:
             region_df = date_df.loc[date_df['country'] == country]
-            mean_df = region_df[avg_score_columns].mean().to_frame().transpose()
+            if region_df.empty:
+                # Create a DataFrame with zeros if no data
+                mean_df = pd.DataFrame({col: [0.0] for col in avg_score_columns})
+            else:
+                mean_df = region_df[avg_score_columns].mean().fillna(0.0).to_frame().transpose()
             sentiments.append(mean_df)
     return pd.concat(sentiments, axis=0)
 
@@ -135,9 +147,11 @@ def aggregate_vol_per_day_per_country(df_count, dates, countries):
     for date in dates:
         for country in countries:
             if date not in df_count['date'].tolist():
-                volume_list.append(0)
+                volume_list.append(0.0)
             else:
-                volume_list.append(df_count.loc[df_count['date'] == date, country].values[0])
+                value = df_count.loc[df_count['date'] == date, country].values[0]
+                # Replace NaN with 0.0
+                volume_list.append(0.0 if pd.isna(value) else value)
     return volume_list
 
 
@@ -147,7 +161,12 @@ def aggregate_stats_per_day_per_country(df_stats, countries, col, dates):
         df_stats['date'] = pd.to_datetime(df_stats.date, format='%Y-%m-%d')
         dates_df = df_stats.loc[df_stats['date'] == date]
         for country in countries:
-            stats_list.append(dates_df.loc[dates_df['country'] == country, col].values[0])
+            country_df = dates_df.loc[dates_df['country'] == country, col]
+            # If no data is found or value is NaN, use 0 as default
+            if country_df.empty or pd.isna(country_df.values[0]):
+                stats_list.append(0.0)
+            else:
+                stats_list.append(country_df.values[0])
     return stats_list
 
 

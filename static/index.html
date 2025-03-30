@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Towards COVID-19 in the UK</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="sidebar">
+            <h2>Navigation</h2>
+            <hr>
+            <ul>
+                <li><a href="#" class="nav-link active" data-page="home">Home</a></li>
+                <li><a href="#" class="nav-link" data-page="timeline">Timeline Exploration</a></li>
+                <li><a href="#" class="nav-link" data-page="analysis">Data Analysis</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <div id="home-page" class="page active">
+                <div class="pretty-container">
+                    <h2>About this Dashboard</h2>
+                    <p>
+                        The Coronavirus (COVID-19) pandemic has been at the forefront 
+                        of the global population's concerns over the last year with the consequence 
+                        having a large impact on individuals daily lives. Twitter is one of the largest 
+                        social media platforms where people from all over the country (and the world) 
+                        express their opinions regarding a wide range of topics, and it is of
+                        no surprise that there has been a surge of discussion around
+                        pandemic and pandemic adjacent topics.
+                    </p>
+                    <p>
+                        The focus of this analysis is on 'tweet's posted within the United
+                        Kingdom with the aim to measure the pulse of general sentiment
+                        towards COVID and lockdown over the past year. A multitude of sentiment analysis 
+                        techniques are applied to the data to measure sentiment change over time.
+                    </p>
+                    <p>
+                        This dashboard provides insight and visualises the change in language expression over a year.
+                        Specifically, exploring reactions to relevant events combined with COVID statistics 
+                        within the UK. Ultimately, with the aim to make exploration and analysis of our
+                        data easily accessible to a nontechnical audience.
+                    </p>
+                    <p>
+                        The end-user will be able to compare the results of different sentiment techniques and how public opinion compares between 
+                        countries/regions in relation to the number of deaths, the number of cases, and certain pandemic related news events over the last year.
+                    </p>
+                    <p>
+                        <b>Please use the sidebar to navigate to the rest of the dashboard!</b>
+                    </p>
+                    <p>
+                        Have fun! 😊
+                    </p>
+                </div>
+
+                <div class="pretty-container">
+                    <h2>Data Collected</h2>
+                    <p>
+                        This dashboard contains two datasets corresponding to COVID and lockdown 
+                        related Tweets posted within the United Kingdom.
+                    </p>
+                    <p>
+                        Each dataset contains approximately 300 thousand tweets, starting from
+                        the 20 March 2020 to the 25 March 2021.
+                    </p>
+                    <p>
+                        The keywords used to scrape the COVID dataset include:
+                        "coronavirus OR covid OR covid19 OR covid-19"
+                    </p>
+                    <p>
+                        The keyword used to scrape the lockdown dataset include:
+                        "lockdown"
+                    </p>
+                    <p>
+                        We used <a href="https://github.com/JustAnotherArchivist/snscrape/tree/master/snscrape" target="_blank">SNScrape</a>, 
+                        an open source wrapper of the Twitter API to collect historical 
+                        Tweets within the UK containing our key words over the past year.
+                    </p>
+                    <p>
+                        See Twitter's Developer Policy regarding API and content usage 
+                        <a href="https://developer.twitter.com/en/developer-terms/agreement-and-policy" target="_blank">here</a>.
+                    </p>
+                    <p>
+                        The news events were collected from the <a href="https://open-platform.theguardian.com/" target="_blank">Guardian News API</a>
+                    </p>
+                    <p>
+                        The relevant COVID statistics were collected from the <a href="https://coronavirus.data.gov.uk/" target="_blank">Public Health England</a>
+                    </p>
+
+                    <h2>Sentiment Techniques</h2>
+                    <p>
+                        This dashboard analyses and compares sentiment of tweet content using four 
+                        sentiment generating techniques:
+                    </p>
+                    <ul>
+                        <li><a href="https://github.com/cjhutto/vaderSentiment" target="_blank">Vader</a></li>
+                        <li><a href="https://web.stanford.edu/~jurafsky/slp3/4.pdf" target="_blank">Naive Bayes</a></li>
+                        <li><a href="https://www.aclweb.org/anthology/O18-1021.pdf" target="_blank">LSTM</a></li>
+                        <li><a href="https://github.com/sloria/TextBlob" target="_blank">Textblob</a></li>
+                    </ul>
+                </div>
+
+                <div class="pretty-container">
+                    <h2>About the Creator</h2>
+                    <p>
+                        This was a project to understand (prove a point) about how certain events shifted sentiment (across Twitter) 
+                        over different geographic and political UK counties during COVID.
+                    </p>
+                </div>
+            </div>
+
+            <div id="timeline-page" class="page">
+                <div class="pretty-container">
+                    <h2>Timeline Exploration</h2>
+                </div>
+
+                <div class="filters-row">
+                    <div class="pretty-container">
+                        <p>Select Tweet Data-set</p>
+                        <select id="source-dropdown">
+                            <option value="covid">COVID</option>
+                            <option value="lockdown">Lockdown</option>
+                        </select>
+                    </div>
+                    <div class="pretty-container">
+                        <p>Select NLP Technique</p>
+                        <select id="nlp-dropdown">
+                            <option value="vader">Vader</option>
+                            <option value="textblob">Text Blob</option>
+                            <option value="nn">LSTM</option>
+                            <option value="native">Naive Bayes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="indicators">
+                    <div class="pretty-container">
+                        <p class="info-text">Total Deaths</p>
+                        <h4 id="total-deaths-indicator" class="indicator-value">Loading...</h4>
+                    </div>
+                    <div class="pretty-container">
+                        <p class="info-text">Total Cases</p>
+                        <h4 id="total-cases-indicator" class="indicator-value">Loading...</h4>
+                    </div>
+                    <div class="pretty-container">
+                        <p class="info-text">R-Number</p>
+                        <h4 id="r-number-indicator" class="indicator-value">Loading...</h4>
+                    </div>
+                    <div class="pretty-container">
+                        <p class="info-text">Current Date</p>
+                        <h4 id="current-date-indicator" class="indicator-value">Loading...</h4>
+                    </div>
+                </div>
+
+                <div class="timeline-controls">
+                    <div id="button-container">
+                        <button id="prev-button">Previous Date</button>
+                        <button id="next-button">Next Date</button>
+                        <button id="play-button">Play</button>
+                    </div>
+                </div>
+
+                <div class="pretty-container">
+                    <div id="slider-container">
+                        <p id="slider-text">Drag the slider to change the date:</p>
+                        <div id="days-slider"></div>
+                    </div>
+                </div>
+
+                <div id="toggle-container" class="pretty-container">
+                    <div>
+                        <input type="checkbox" id="heatmap-container-toggle" checked>
+                        <label for="heatmap-container-toggle">Sentiment Heatmap</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="bar-chart-div-toggle" checked>
+                        <label for="bar-chart-div-toggle">Sentiment and Emoji Bar Charts</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="news-hashtag-div-toggle" checked>
+                        <label for="news-hashtag-div-toggle">News and Hashtags</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="deaths-and-cases-div-toggle" checked>
+                        <label for="deaths-and-cases-div-toggle">Deaths and Cases</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="7-day-MA-div-toggle" checked>
+                        <label for="7-day-MA-div-toggle">7 Day Moving Average</label>
+                    </div>
+                </div>
+
+                <div class="data-row">
+                    <div id="heatmap-container" class="pretty-container">
+                        <h6 id="heatmap-title">Heatmap of sentiment towards COVID-19 in the UK on day: </h6>
+                        <div id="county-choropleth" class="chart"></div>
+                    </div>
+
+                    <div id="bar-chart-div" class="pretty-container">
+                        <div id="bar-chart-container">
+                            <h6>Sentiment Count Per Day</h6>
+                            <div>
+                                <input type="checkbox" id="sentiment-bar-chart-toggle" checked>
+                                <label for="sentiment-bar-chart-toggle">Show/Hide</label>
+                            </div>
+                            <div id="sentiment-bar-chart" class="chart"></div>
+                            
+                            <h6>Top Weekly Emojis</h6>
+                            <div>
+                                <input type="checkbox" id="emoji-bar-chart-toggle" checked>
+                                <label for="emoji-bar-chart-toggle">Show/Hide</label>
+                            </div>
+                            <div id="emoji-bar-chart" class="chart"></div>
+                        </div>
+                    </div>
+
+                    <div id="news-hashtag-div" class="pretty-container">
+                        <h6>Top News Stories</h6>
+                        <div>
+                            <input type="checkbox" id="daily-news-toggle" checked>
+                            <label for="daily-news-toggle">Show/Hide</label>
+                        </div>
+                        <div id="daily-news"></div>
+
+                        <h6>Top 10 Hashtags</h6>
+                        <div>
+                            <input type="checkbox" id="hashtag-table-toggle" checked>
+                            <label for="hashtag-table-toggle">Show/Hide</label>
+                        </div>
+                        <div id="hashtag-table" class="chart"></div>
+                    </div>
+                </div>
+
+                <div id="covid-stats" class="data-row">
+                    <div id="covid-stats-container" class="pretty-container">
+                        <h6 id="stats-title">Deaths and Cases Over Time</h6>
+                        <div id="stats-graph" class="chart"></div>
+                    </div>
+
+                    <div id="ma-sent-container" class="pretty-container">
+                        <h6 id="sent-vol-title">7 Day Moving Average of Covid Sentiment For Each Country (Starts at 2020-03-27)</h6>
+                        <div id="ma-sent-graph" class="chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analysis-page" class="page">
+                <div class="pretty-container">
+                    <h2>Data Analysis and Exploration</h2>
+                </div>
+
+                <div class="filters-row">
+                    <div class="pretty-container">
+                        <p>Select Tweet Data-set</p>
+                        <select id="analysis-source-dropdown">
+                            <option value="covid">COVID</option>
+                            <option value="lockdown">Lockdown</option>
+                        </select>
+                    </div>
+                    <div class="pretty-container">
+                        <p>Select NLP Technique</p>
+                        <select id="analysis-nlp-dropdown">
+                            <option value="vader">Vader</option>
+                            <option value="textblob">Text Blob</option>
+                            <option value="nn">LSTM</option>
+                            <option value="native">Naive Bayes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="data-row">
+                    <div class="pretty-container">
+                        <h6>Notable Days</h6>
+                        <div id="notable-day-table" class="chart"></div>
+                    </div>
+
+                    <div class="pretty-container">
+                        <div id="graph-container">
+                            <p id="chart-selector">Select Chart:</p>
+                            <select id="chart-dropdown">
+                                <option value="show_sentiment_vs_time">7 Day MA COVID Sentiment vs Tweet Volume (Starts at 2020-03-27)</option>
+                                <option value="show_sentiment_comparison" selected>Comparison of Sentiment Generation Techniques (Starts at 2020-03-27)</option>
+                            </select>
+                            <div id="dropdown-figure" class="chart"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-row">
+                    <div id="emoji-wordcloud-div" class="pretty-container">
+                        <h4>Popular Emoji's</h4>
+                        <img id="emoji-wordcloud" src="assets/covid_emoji_wordcloud.png" alt="COVID Emoji Wordcloud">
+                        
+                        <h4>Popular Words (Excluding Keywords)</h4>
+                        <img id="wordcloud" src="assets/covid_wordcloud.png" alt="COVID Wordcloud">
+                    </div>
+
+                    <div class="pretty-container">
+                        <h4>Correlation Between Features (Scaled Volume, Deaths, Cases)</h4>
+                        <div id="corr-mat" class="chart"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
