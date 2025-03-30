@@ -435,7 +435,257 @@ def get_county_choropleth():
     
     return jsonify(fig_to_json(fig))
 
-# Add other API routes as needed...
+@app.route('/api/sentiment_bar_chart')
+def get_sentiment_bar_chart():
+    """Get sentiment bar chart data"""
+    date = request.args.get('date')
+    source = request.args.get('source', 'covid')
+    nlp_type = request.args.get('nlp_type', 'vader')
+    
+    if complete_data_sources[source].empty:
+        return jsonify({
+            'error': 'No sentiment data available'
+        })
+    
+    data = complete_data_sources[source]
+    data['date'] = pd.to_datetime(data['date']).dt.date
+    df = data[data['date'] == datetime.datetime.strptime(date, '%Y-%m-%d').date()]
+    label = sentiment_dropdown_value_to_predictions[nlp_type]
+    
+    try:
+        fig = plot_sentiment_bar(df, label, countries)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting sentiment bar chart: {e}")
+        return jsonify({
+            'error': f'Error generating chart: {str(e)}'
+        })
+
+@app.route('/api/emoji_bar_chart')
+def get_emoji_bar_chart():
+    """Get emoji bar chart data"""
+    date = request.args.get('date')
+    topic = request.args.get('topic', 'covid')
+    
+    if emojis_weekly_source[topic].empty:
+        return jsonify({
+            'error': 'No emoji data available'
+        })
+    
+    # Adjust to get the weekly start date
+    try:
+        date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
+        date_index = (dates_list == date_obj).argmax()
+        weekly_index = date_index - (date_index % 7)
+        weekly_date = str(dates_list[weekly_index].date())
+        
+        emoji_df = emojis_weekly_source[topic]
+        fig = plot_emoji_bar_chart(emoji_df, weekly_date)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting emoji bar chart: {e}")
+        return jsonify({
+            'error': f'Error generating chart: {str(e)}'
+        })
+
+@app.route('/api/hashtag_table')
+def get_hashtag_table():
+    """Get hashtag table data"""
+    date = request.args.get('date')
+    source = request.args.get('source', 'covid')
+    
+    if hashtag_data_sources[source].empty:
+        return jsonify({
+            'error': 'No hashtag data available'
+        })
+    
+    try:
+        hashtags_df = hashtag_data_sources[source]
+        hashtag_date = hashtags_df.loc[hashtags_df['date'] == date]
+        
+        if hashtag_date.empty:
+            return jsonify({
+                'data': [],
+                'layout': {'title': 'No data available for this date'}
+            })
+        
+        import re
+        hashtags = [tuple(x.split(',')) for x in re.findall(
+            "\((.*?)\)", hashtag_date['top_ten_hashtags'].values[0])]
+        hash_dict = {'Hashtag': [], 'Count': []}
+        for hashtag, count in hashtags:
+            hash_dict['Hashtag'].append('#' + hashtag.replace("'", ''))
+            hash_dict['Count'].append(int(count))
+        hash_df = pd.DataFrame(hash_dict)
+        
+        fig = plot_hashtag_table(hash_df)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting hashtag table: {e}")
+        return jsonify({
+            'error': f'Error generating table: {str(e)}'
+        })
+
+@app.route('/api/daily_news')
+def get_daily_news():
+    """Get daily news content"""
+    date = request.args.get('date')
+    
+    if news_df.empty:
+        return jsonify({
+            'date': date,
+            'content': 'No news data available'
+        })
+    
+    try:
+        df = news_df.loc[news_df['Date'] == date]
+        links = ''
+        for ind in df.index:
+            headline = news_df['Headline'][ind]
+            URL = df['URL'][ind]
+            link = f'<a href="{URL}" target="_blank"><b>{headline}</b></a><br><br>'
+            links += link
+        
+        return jsonify({
+            'date': date,
+            'content': links or 'No news for this date'
+        })
+    except Exception as e:
+        print(f"Error getting daily news: {e}")
+        return jsonify({
+            'date': date,
+            'content': f'Error retrieving news: {str(e)}'
+        })
+
+@app.route('/api/stats_graph')
+def get_stats_graph():
+    """Get COVID stats graph"""
+    date = request.args.get('date')
+    
+    if formatted_covid_stats.empty or not events_array:
+        return jsonify({
+            'error': 'No COVID stats data or events available'
+        })
+    
+    try:
+        fig = plot_covid_stats(formatted_covid_stats, countries, events_array, start_global, date)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting stats graph: {e}")
+        return jsonify({
+            'error': f'Error generating graph: {str(e)}'
+        })
+
+@app.route('/api/ma_sent_graph')
+def get_ma_sent_graph():
+    """Get moving average sentiment graph"""
+    date = request.args.get('date')
+    topic = request.args.get('topic', 'covid')
+    sentiment_type = request.args.get('sentiment_type', 'vader')
+    
+    if formatted_tweet_sent[topic].empty:
+        return jsonify({
+            'error': 'No sentiment data available'
+        })
+    
+    try:
+        sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+        tweet_sent_df = formatted_tweet_sent[topic]
+        
+        fig = plot_sentiment(tweet_sent_df, sentiment_col, start_global, date)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting sentiment graph: {e}")
+        return jsonify({
+            'error': f'Error generating graph: {str(e)}'
+        })
+
+@app.route('/api/notable_days')
+def get_notable_days():
+    """Get notable days table"""
+    topic = request.args.get('topic', 'covid')
+    nlp_type = request.args.get('nlp_type', 'vader')
+    
+    if notable_days_sources[topic].empty:
+        return jsonify({
+            'error': 'No notable days data available'
+        })
+    
+    try:
+        source = notable_days_sources[topic]
+        df = source.loc[source['sentiment_type'] == nlp_type]
+        
+        fig = plot_notable_days(df)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting notable days: {e}")
+        return jsonify({
+            'error': f'Error generating table: {str(e)}'
+        })
+
+@app.route('/api/dropdown_figure')
+def get_dropdown_figure():
+    """Get dropdown figure based on selected options"""
+    topic = request.args.get('topic', 'covid')
+    sentiment_type = request.args.get('sentiment_type', 'vader')
+    chart_value = request.args.get('chart_value', 'show_sentiment_comparison')
+    
+    selected_date = end_global
+    
+    try:
+        sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+        tweet_count_df = formatted_tweet_count[topic]
+        tweet_sent_df = formatted_tweet_sent[topic]
+        
+        if chart_value == 'show_sentiment_vs_time':
+            if tweet_sent_df.empty or tweet_count_df.empty or not events_array:
+                return jsonify({
+                    'error': 'Missing data for sentiment vs time chart'
+                })
+            fig = plot_dropdown_sent_vs_vol(
+                tweet_sent_df, tweet_count_df, sentiment_col, events_array, countries, start_global, selected_date
+            )
+        elif chart_value == 'show_sentiment_comparison':
+            if formatted_sent_comp[topic].empty:
+                return jsonify({
+                    'error': 'Missing data for sentiment comparison chart'
+                })
+            df = formatted_sent_comp[topic]
+            fig = plot_sentiment_comp(df, start_global, selected_date)
+        else:
+            return jsonify({
+                'error': 'Invalid chart type'
+            })
+        
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error generating dropdown figure: {e}")
+        return jsonify({
+            'error': f'Error generating chart: {str(e)}'
+        })
+
+@app.route('/api/corr_mat')
+def get_corr_mat():
+    """Get correlation matrix"""
+    topic = request.args.get('topic', 'covid')
+    sentiment_type = request.args.get('sentiment_type', 'vader')
+    
+    if scatter_sources[topic].empty:
+        return jsonify({
+            'error': 'No correlation data available'
+        })
+    
+    try:
+        sentiment_col = sentiment_dropdown_value_to_avg_score[sentiment_type]
+        data = scatter_sources[topic]
+        
+        fig = plot_corr_mat(data, sentiment_col)
+        return jsonify(fig_to_json(fig))
+    except Exception as e:
+        print(f"Error plotting correlation matrix: {e}")
+        return jsonify({
+            'error': f'Error generating matrix: {str(e)}'
+        })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
