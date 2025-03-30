@@ -1,1 +1,1 @@
-web: gunicorn minimal2:app
+web: gunicorn robust_api:app
