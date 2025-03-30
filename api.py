@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from flask import Flask, jsonify, request, send_from_directory
+from pathlib import Path
 
 from utils.formatting import create_event_array
 from utils.formatting import (
@@ -21,36 +22,39 @@ from utils.plotting import (
     emoji_to_colour, plot_notable_days, plot_sentiment_comp
 )
 
+# Define the base directory using pathlib for cross-platform compatibility
+BASE_DIR = Path(__file__).resolve().parent
+
 app = Flask(__name__, static_folder="static")
 
-# READ DATA
+# READ DATA - use absolute paths with Path
 df_covid_stats = pd.read_csv(
-    'data/covid-data/uk_covid_stats.csv', skipinitialspace=True)
-uk_counties = json.load(open('data/geojson/uk_counties_simpler.json', 'r'))
-r_numbers = pd.read_csv('data/covid-data/r_numbers.csv')
-df_events = pd.read_csv('data/events/key_events.csv',
+    BASE_DIR / 'data/covid-data/uk_covid_stats.csv', skipinitialspace=True)
+uk_counties = json.load(open(BASE_DIR / 'data/geojson/uk_counties_simpler.json', 'r'))
+r_numbers = pd.read_csv(BASE_DIR / 'data/covid-data/r_numbers.csv')
+df_events = pd.read_csv(BASE_DIR / 'data/events/key_events.csv',
                         skipinitialspace=True, usecols=['Date', 'Event'])
 counties = pd.read_csv(
-    'data/geojson/uk-district-list-all.csv')['county'].tolist()
-hashtags_covid = pd.read_csv('data/covid/top_ten_hashtags_per_day.csv')
-hashtags_lockdown = pd.read_csv('data/lockdown/top_ten_hashtags_per_day.csv')
+    BASE_DIR / 'data/geojson/uk-district-list-all.csv')['county'].tolist()
+hashtags_covid = pd.read_csv(BASE_DIR / 'data/covid/top_ten_hashtags_per_day.csv')
+hashtags_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/top_ten_hashtags_per_day.csv')
 geo_df_covid = pd.read_csv(
-    'data/covid/daily_sentiment_county_updated_locations.csv')
+    BASE_DIR / 'data/covid/daily_sentiment_county_updated_locations.csv')
 geo_df_lockdown = pd.read_csv(
-    'data/lockdown/daily_sentiment_county_updated_locations.csv')
-tweet_count_covid = pd.read_csv('data/covid/daily_tweet_count_country.csv')
+    BASE_DIR / 'data/lockdown/daily_sentiment_county_updated_locations.csv')
+tweet_count_covid = pd.read_csv(BASE_DIR / 'data/covid/daily_tweet_count_country.csv')
 tweet_count_lockdown = pd.read_csv(
-    'data/lockdown/daily_tweet_count_country.csv')
-all_sentiments_covid = pd.read_csv('data/covid/all_tweet_sentiments.csv')
-all_sentiments_lockdown = pd.read_csv('data/lockdown/all_tweet_sentiments.csv')
-notable_days_covid = pd.read_csv('data/covid/notable_days_months.csv')
-notable_days_lockdown = pd.read_csv('data/lockdown/notable_days_months.csv')
-scatter_covid = pd.read_csv('data/covid/scatter.csv')
-scatter_lockdown = pd.read_csv('data/lockdown/scatter.csv')
+    BASE_DIR / 'data/lockdown/daily_tweet_count_country.csv')
+all_sentiments_covid = pd.read_csv(BASE_DIR / 'data/covid/all_tweet_sentiments.csv')
+all_sentiments_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/all_tweet_sentiments.csv')
+notable_days_covid = pd.read_csv(BASE_DIR / 'data/covid/notable_days_months.csv')
+notable_days_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/notable_days_months.csv')
+scatter_covid = pd.read_csv(BASE_DIR / 'data/covid/scatter.csv')
+scatter_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/scatter.csv')
 
-emojis_covid = pd.read_csv('data/covid/weekly_emojis_with_colours.csv')
-emojis_lockdown = pd.read_csv('data/lockdown/weekly_emojis_with_colours.csv')
-news_df = pd.read_csv('data/events/news_timeline.csv')
+emojis_covid = pd.read_csv(BASE_DIR / 'data/covid/weekly_emojis_with_colours.csv')
+emojis_lockdown = pd.read_csv(BASE_DIR / 'data/lockdown/weekly_emojis_with_colours.csv')
+news_df = pd.read_csv(BASE_DIR / 'data/events/news_timeline.csv')
 
 countries = ['England', 'Scotland', 'Northern Ireland', 'Wales']
 
@@ -139,11 +143,11 @@ def fig_to_json(fig):
 # Serve static files from the static directory
 @app.route('/')
 def index():
-    return send_from_directory('static', 'index.html')
+    return send_from_directory(BASE_DIR / 'static', 'index.html')
 
 @app.route('/<path:path>')
 def static_files(path):
-    return send_from_directory('static', path)
+    return send_from_directory(BASE_DIR / 'static', path)
 
 # API Routes
 
