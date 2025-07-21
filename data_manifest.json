@@ -1,0 +1,112 @@
+{
+  "geojson/uk_counties_simpler.json": {
+    "local_path": "data/geojson/uk_counties_simpler.json",
+    "size_bytes": 213558,
+    "blob_url": "https://your-blob-store.vercel-storage.com/geojson/uk_counties_simpler.json"
+  },
+  "geojson/uk-district-list-all.csv": {
+    "local_path": "data/geojson/uk-district-list-all.csv",
+    "size_bytes": 18127,
+    "blob_url": "https://your-blob-store.vercel-storage.com/geojson/uk-district-list-all.csv"
+  },
+  "lockdown/scatter.csv": {
+    "local_path": "data/lockdown/scatter.csv",
+    "size_bytes": 221777,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/scatter.csv"
+  },
+  "lockdown/daily_sentiment_county_updated_locations.csv": {
+    "local_path": "data/lockdown/daily_sentiment_county_updated_locations.csv",
+    "size_bytes": 3698417,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/daily_sentiment_county_updated_locations.csv"
+  },
+  "lockdown/notable_days_months.csv": {
+    "local_path": "data/lockdown/notable_days_months.csv",
+    "size_bytes": 1417,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/notable_days_months.csv"
+  },
+  "lockdown/all_tweet_sentiments.csv": {
+    "local_path": "data/lockdown/all_tweet_sentiments.csv",
+    "size_bytes": 17688354,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/all_tweet_sentiments.csv"
+  },
+  "lockdown/top_ten_hashtags_per_day.csv": {
+    "local_path": "data/lockdown/top_ten_hashtags_per_day.csv",
+    "size_bytes": 74918,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/top_ten_hashtags_per_day.csv"
+  },
+  "lockdown/weekly_emojis_with_colours.csv": {
+    "local_path": "data/lockdown/weekly_emojis_with_colours.csv",
+    "size_bytes": 22758,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/weekly_emojis_with_colours.csv"
+  },
+  "lockdown/daily_tweet_count_country.csv": {
+    "local_path": "data/lockdown/daily_tweet_count_country.csv",
+    "size_bytes": 8897,
+    "blob_url": "https://your-blob-store.vercel-storage.com/lockdown/daily_tweet_count_country.csv"
+  },
+  "covid-data/uk_covid_stats.csv": {
+    "local_path": "data/covid-data/uk_covid_stats.csv",
+    "size_bytes": 72177,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid-data/uk_covid_stats.csv"
+  },
+  "covid-data/r_numbers.csv": {
+    "local_path": "data/covid-data/r_numbers.csv",
+    "size_bytes": 980,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid-data/r_numbers.csv"
+  },
+  "covid-data/uk_covid_stats_raw.csv": {
+    "local_path": "data/covid-data/uk_covid_stats_raw.csv",
+    "size_bytes": 78917,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid-data/uk_covid_stats_raw.csv"
+  },
+  "events/key_events.csv": {
+    "local_path": "data/events/key_events.csv",
+    "size_bytes": 1592,
+    "blob_url": "https://your-blob-store.vercel-storage.com/events/key_events.csv"
+  },
+  "events/news_timeline.csv": {
+    "local_path": "data/events/news_timeline.csv",
+    "size_bytes": 143489,
+    "blob_url": "https://your-blob-store.vercel-storage.com/events/news_timeline.csv"
+  },
+  "covid/scatter.csv": {
+    "local_path": "data/covid/scatter.csv",
+    "size_bytes": 222896,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/scatter.csv"
+  },
+  "covid/daily_sentiment_county_updated_locations.csv": {
+    "local_path": "data/covid/daily_sentiment_county_updated_locations.csv",
+    "size_bytes": 4056719,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/daily_sentiment_county_updated_locations.csv"
+  },
+  "covid/notable_days_months.csv": {
+    "local_path": "data/covid/notable_days_months.csv",
+    "size_bytes": 1410,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/notable_days_months.csv"
+  },
+  "covid/all_tweet_sentiments.csv": {
+    "local_path": "data/covid/all_tweet_sentiments.csv",
+    "size_bytes": 24184206,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/all_tweet_sentiments.csv"
+  },
+  "covid/top_ten_hashtags_per_day.csv": {
+    "local_path": "data/covid/top_ten_hashtags_per_day.csv",
+    "size_bytes": 72997,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/top_ten_hashtags_per_day.csv"
+  },
+  "covid/weekly_emojis_with_colours.csv": {
+    "local_path": "data/covid/weekly_emojis_with_colours.csv",
+    "size_bytes": 25072,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/weekly_emojis_with_colours.csv"
+  },
+  "covid/covid_emoji_count_separated.csv": {
+    "local_path": "data/covid/covid_emoji_count_separated.csv",
+    "size_bytes": 12232,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/covid_emoji_count_separated.csv"
+  },
+  "covid/daily_tweet_count_country.csv": {
+    "local_path": "data/covid/daily_tweet_count_country.csv",
+    "size_bytes": 9104,
+    "blob_url": "https://your-blob-store.vercel-storage.com/covid/daily_tweet_count_country.csv"
+  }
+}
