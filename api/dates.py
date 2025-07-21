@@ -1,9 +1,9 @@
 import json
-import pandas as pd
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import sys
 import os
+from datetime import datetime, timedelta
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,17 +12,22 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Return all dates in the dataset"""
         try:
-            # Don't load external data for now - just return hardcoded dates
-            start_global = '2020-03-20'
-            end_global = '2021-03-25'
-            dates_list = pd.date_range(start=start_global, end=end_global)
-            str_dates_list = [str(date.date()) for date in dates_list]
+            # Generate dates without pandas
+            start_date = datetime(2020, 3, 20)
+            end_date = datetime(2021, 3, 25)
+            
+            dates_list = []
+            current_date = start_date
+            while current_date <= end_date:
+                dates_list.append(current_date.strftime('%Y-%m-%d'))
+                current_date += timedelta(days=1)
             
             response_data = {
-                'dates': str_dates_list,
-                'start_date': start_global,
-                'end_date': end_global,
-                'status': 'working'
+                'dates': dates_list,
+                'start_date': '2020-03-20',
+                'end_date': '2021-03-25',
+                'status': 'working without pandas',
+                'count': len(dates_list)
             }
             
             self.send_response(200)
