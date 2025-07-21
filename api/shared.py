@@ -13,11 +13,7 @@ from io import StringIO
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
-from utils.formatting import create_event_array
-from utils.formatting import (
-    format_df_ma_stats, format_df_ma_sent, format_df_ma_tweet_vol, 
-    format_df_corr, format_df_notable_days, format_df_ma_sent_comp
-)
+
 from utils.plotting import (
     plot_dropdown_sent_vs_vol, plot_covid_stats, plot_hashtag_table, 
     plot_sentiment, plot_corr_mat, plot_sentiment_bar, plot_emoji_bar_chart, 
