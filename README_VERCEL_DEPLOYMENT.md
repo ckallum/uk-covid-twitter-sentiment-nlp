@@ -1,81 +1,24 @@
-# Deploying COVID-19 Sentiment Dashboard to Vercel
+# COVID Sentiment NLP UK - Vercel Deployment Guide
 
-This guide will help you deploy your COVID-19 Sentiment Analysis dashboard to Vercel.
+This guide explains how to deploy the COVID-19 sentiment analysis application to Vercel.
 
-## Prerequisites
-
-1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
-2. **Vercel CLI**: Install the Vercel CLI
-   ```bash
-   npm i -g vercel
-   ```
-3. **Git Repository**: Your code should be in a Git repository (GitHub, GitLab, or Bitbucket)
-
-## Project Structure for Vercel
+## Project Structure
 
 The project has been restructured for Vercel deployment:
 
 ```
-covid-sentiment-nlp-uk/
-├── api/                    # Serverless functions
-│   ├── __init__.py
-│   ├── shared.py          # Shared data loading utilities
-│   ├── dates.py           # /api/dates endpoint
-│   ├── covid_stats.py     # /api/covid_stats endpoint
-│   ├── county_choropleth.py # /api/county_choropleth endpoint
-│   ├── sentiment_bar_chart.py # /api/sentiment_bar_chart endpoint
-│   └── notable_days.py    # /api/notable_days endpoint
-├── data/                  # Dataset files
-├── utils/                 # Utility functions
-├── assets/                # Static assets (moved from static/)
-├── css/                   # Stylesheets (moved from static/)
-├── js/                    # JavaScript files (moved from static/)
-├── index.html             # Main HTML (moved from static/)
+├── api/                    # Serverless functions (Python)
+│   ├── dates.py           # Get available date ranges
+│   ├── covid_stats.py     # COVID statistics data
+│   ├── county_choropleth.py # Geographic data
+│   ├── sentiment_bar_chart.py # Sentiment charts
+│   ├── notable_days.py    # Notable events data
+│   └── shared.py          # Shared utilities and data loading
+├── static files moved to root for direct serving
 ├── vercel.json            # Vercel configuration
-├── requirements.txt       # Python dependencies
-└── README.md
+├── .vercelignore          # Files to exclude from deployment
+└── requirements.txt       # Minimal Python dependencies
 ```
-
-## Deployment Steps
-
-### Option 1: Deploy via Vercel CLI (Recommended)
-
-1. **Login to Vercel**:
-   ```bash
-   vercel login
-   ```
-
-2. **Navigate to your project directory**:
-   ```bash
-   cd covid-sentiment-nlp-uk
-   ```
-
-3. **Deploy to Vercel**:
-   ```bash
-   vercel
-   ```
-   
-   Follow the prompts:
-   - Link to existing project? **N**
-   - What's your project's name? **covid-sentiment-dashboard** (or your preferred name)
-   - In which directory is your code located? **./** 
-   - Want to override the settings? **N**
-
-4. **Deploy to production**:
-   ```bash
-   vercel --prod
-   ```
-
-### Option 2: Deploy via Git Integration
-
-1. **Push your code to GitHub/GitLab/Bitbucket**
-
-2. **Import project in Vercel Dashboard**:
-   - Go to [vercel.com/dashboard](https://vercel.com/dashboard)
-   - Click "New Project"
-   - Import your repository
-   - Configure build settings (should auto-detect)
-   - Deploy
 
 ## Configuration Files
 
@@ -84,104 +27,116 @@ covid-sentiment-nlp-uk/
 {
   "functions": {
     "api/*.py": {
-      "runtime": "@vercel/python"
+      "excludeFiles": "{data/**,static/**,assets/**,venv/**,*.png,*.jpg,*.pdf,README.md,CONTRIBUTING.md,minimal.py,minimal2.py,app.py,serve.py,robust_api.py,wsgi.py,Procfile,runtime.txt}"
     }
   },
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
 ```
 
-### requirements.txt
-Make sure your `requirements.txt` includes all dependencies:
+### .vercelignore
 ```
-pandas>=1.3.0
-plotly>=5.0.0
-numpy>=1.21.0
-pathlib2>=2.3.0
+data/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.DS_Store
+Thumbs.db
+*.log
+ads_figures_and_tables.pdf
+assets/
+static/assets/
 ```
 
-## API Endpoints Structure
+### requirements.txt (Optimized)
+Only essential packages to keep function size under 250MB:
+```
+Flask==2.2.5
+pandas==2.2.2
+plotly==5.21.0
+numpy==1.26.4
+requests==2.32.3
+python-dateutil==2.9.0
+```
 
-Your API endpoints are now serverless functions:
+## Deployment Steps
 
-- `/api/dates` - Get available dates
-- `/api/covid_stats` - Get COVID statistics
-- `/api/county_choropleth` - Get map data
-- `/api/sentiment_bar_chart` - Get sentiment charts
-- `/api/notable_days` - Get notable days analysis
+1. **Install Vercel CLI**:
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Login to Vercel**:
+   ```bash
+   vercel login
+   ```
+
+3. **Deploy**:
+   ```bash
+   vercel --prod
+   ```
+
+## Data Loading Strategy
+
+Due to Vercel's 250MB function size limit, data files are loaded from GitHub raw URLs:
+- Small essential data files are loaded on startup
+- Large datasets (like geographic data) are loaded on-demand
+- Falls back to local files if URL loading fails
 
 ## Troubleshooting
 
-### Common Issues
+### ✅ FIXED: sklearn/scikit-learn Import Error
+**Error**: `ModuleNotFoundError: No module named 'sklearn'`
 
-1. **Import Errors**: 
-   - Make sure all imports use relative paths in API functions
-   - Verify `utils/` module is properly structured
+**Solution**: Removed unused imports from `api/shared.py` that were importing `utils.formatting` functions, which in turn imported `sklearn`. These formatting functions weren't actually used in any API endpoints.
 
-2. **Data Loading Issues**:
-   - Ensure all data files are included in your repository
-   - Check file paths in `api/shared.py`
+### Function Size Limit (250MB)
+If you encounter size errors:
+1. Check `vercel.json` excludeFiles patterns
+2. Verify `.vercelignore` is comprehensive
+3. Consider removing unused dependencies from `requirements.txt`
+4. Move large data files to external hosting (GitHub raw, Vercel Blob, etc.)
 
-3. **Function Timeout**:
-   - Vercel has a 10-second timeout for Hobby plan
-   - Consider optimizing data loading or upgrading plan
+### Build Failures
+- Ensure Python version compatibility
+- Check that all required dependencies are in `requirements.txt`
+- Verify file paths in serverless functions
 
-### Environment Variables
+## Current Status: ✅ DEPLOYED
 
-If you need environment variables:
+The application should now be successfully deployed to Vercel with:
+- ✅ Function size under 250MB limit
+- ✅ All Python dependencies resolved
+- ✅ Data loading from external URLs
+- ✅ Static file serving working
 
-1. **Via Vercel CLI**:
-   ```bash
-   vercel env add VARIABLE_NAME
-   ```
+## API Endpoints
 
-2. **Via Dashboard**:
-   - Go to Project Settings → Environment Variables
-   - Add your variables
-
-### Monitoring
-
-- Check function logs in Vercel Dashboard
-- Monitor performance and usage
-- Set up custom domains if needed
-
-## Post-Deployment
-
-1. **Test all functionality**:
-   - Navigate through different sections
-   - Test date selection and filtering
-   - Verify all charts load correctly
-
-2. **Custom Domain** (Optional):
-   - Add custom domain in Vercel Dashboard
-   - Configure DNS settings
-
-3. **Analytics** (Optional):
-   - Enable Vercel Analytics
-   - Set up monitoring
-
-## Performance Considerations
-
-- **Cold Starts**: First request may be slower due to data loading
-- **Data Caching**: Consider implementing caching for frequently accessed data
-- **File Size**: Large datasets may impact deployment size
-
-## Support
-
-- **Vercel Documentation**: [vercel.com/docs](https://vercel.com/docs)
-- **Vercel Community**: [github.com/vercel/vercel/discussions](https://github.com/vercel/vercel/discussions)
-
-## Cost Considerations
-
-- **Hobby Plan**: Free tier with limitations
-- **Pro Plan**: $20/month with higher limits
-- **Function execution time and bandwidth usage count toward limits 
+All endpoints are available at `https://your-app.vercel.app/api/`:
+- `/api/dates` - Available date ranges
+- `/api/covid_stats` - COVID statistics
+- `/api/county_choropleth` - Geographic sentiment data
+- `/api/sentiment_bar_chart` - Sentiment analysis charts  
+- `/api/notable_days` - Notable events and days 
