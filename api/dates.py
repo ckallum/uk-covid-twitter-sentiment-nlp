@@ -8,15 +8,11 @@ import os
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from api.shared import load_data
-
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         """Return all dates in the dataset"""
         try:
-            data = load_data()
-            
-            # Dates
+            # Don't load external data for now - just return hardcoded dates
             start_global = '2020-03-20'
             end_global = '2021-03-25'
             dates_list = pd.date_range(start=start_global, end=end_global)
@@ -25,7 +21,8 @@ class handler(BaseHTTPRequestHandler):
             response_data = {
                 'dates': str_dates_list,
                 'start_date': start_global,
-                'end_date': end_global
+                'end_date': end_global,
+                'status': 'working'
             }
             
             self.send_response(200)
