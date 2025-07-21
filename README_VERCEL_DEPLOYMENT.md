@@ -84,7 +84,7 @@ covid-sentiment-nlp-uk/
 {
   "functions": {
     "api/*.py": {
-      "runtime": "python3.9"
+      "runtime": "@vercel/python"
     }
   },
   "routes": [
@@ -96,10 +96,7 @@ covid-sentiment-nlp-uk/
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "/var/task"
-  }
+  ]
 }
 ```
 
