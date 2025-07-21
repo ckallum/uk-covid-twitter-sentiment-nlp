@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/*.py": {
-      "excludeFiles": "data/**"
+      "excludeFiles": "{data/**,static/**,assets/**,venv/**,*.png,*.jpg,*.pdf,README.md,CONTRIBUTING.md,minimal.py,minimal2.py,app.py,serve.py,robust_api.py,wsgi.py,Procfile,runtime.txt}"
     }
   },
   "routes": [
