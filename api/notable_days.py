@@ -1,14 +1,6 @@
 import json
-import numpy as np
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import sys
-import os
-
-# Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from api.shared import get_data_sources
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -21,16 +13,18 @@ class handler(BaseHTTPRequestHandler):
             topic = query_params.get('topic', ['covid'])[0]
             nlp_type = query_params.get('nlp_type', ['vader'])[0]
             
-            # Get data sources
-            data_sources = get_data_sources()
-            
-            # For now, return basic response without complex plotting
+            # Return mock data for now
             response_data = {
                 'status': 'success',
                 'topic': topic,
                 'nlp_type': nlp_type,
-                'message': 'Notable days endpoint working',
-                'data_loaded': len(data_sources) > 0
+                'message': 'Notable days endpoint working without dependencies',
+                'mock_data': True,
+                'notable_days': [
+                    {'date': '2020-03-23', 'event': 'UK Lockdown Announced', 'sentiment': -0.5},
+                    {'date': '2020-05-10', 'event': 'Stay Alert Message', 'sentiment': -0.2},
+                    {'date': '2020-12-08', 'event': 'First Vaccine', 'sentiment': 0.7}
+                ]
             }
             
             self.send_response(200)
