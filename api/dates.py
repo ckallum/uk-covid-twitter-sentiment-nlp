@@ -22,7 +22,8 @@ class handler(BaseHTTPRequestHandler):
                 'start_date': '2020-03-20',
                 'end_date': '2021-03-25',
                 'status': 'working without external dependencies',
-                'total_dates': len(dates_list)
+                'total_dates': len(dates_list),
+                'deployed_at': datetime.now().isoformat()
             }
             
             self.send_response(200)
