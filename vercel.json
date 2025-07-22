@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/*.py": {
-      "excludeFiles": "data/**"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
