@@ -940,7 +940,225 @@ function viewportBucket() {
   return 'desktop';
 }
 
+// ============================================================
+// Embed Mode (?embed=1&chart=<id>)
+// ============================================================
+
+function buildCountyRanking(countyDataByDate, nlpType, topN = 10) {
+  const sums = {};
+  const counts = {};
+  Object.values(countyDataByDate).forEach(day => {
+    day.forEach(row => {
+      const v = row[nlpType];
+      if (typeof v !== 'number') return;
+      const key = row.county;
+      sums[key] = (sums[key] || 0) + v;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+  });
+  const avgs = Object.keys(sums).map(county => ({
+    county,
+    avg: sums[county] / counts[county],
+  }));
+  avgs.sort((a, b) => b.avg - a.avg);
+  const happiest = avgs.slice(0, topN);
+  const saddest = avgs.slice(-topN).reverse();
+
+  const labels = [
+    ...happiest.map((_, i) => `Happiest #${i + 1}`),
+    ...saddest.map((_, i) => `Saddest #${i + 1}`),
+  ];
+  const counties = [...happiest.map(d => d.county), ...saddest.map(d => d.county)];
+  const values = [...happiest.map(d => d.avg.toFixed(3)), ...saddest.map(d => d.avg.toFixed(3))];
+
+  return {
+    data: [{
+      type: 'table',
+      header: {
+        values: ['<b>RANK</b>', '<b>COUNTY</b>', `<b>AVG ${NLP_LABELS[nlpType].toUpperCase()}</b>`],
+        align: 'left',
+        fill: { color: COLORS.phase3 },
+        font: { color: 'white', family: 'DM Mono, monospace', size: 11 },
+        height: 32,
+        line: { width: 0 },
+      },
+      cells: {
+        values: [labels, counties, values],
+        align: 'left',
+        fill: { color: ['#f5f3ed', 'white'] },
+        font: { family: 'DM Mono, monospace', size: 11, color: COLORS.text },
+        height: 28,
+        line: { width: 0.5, color: COLORS.borderSubtle },
+      },
+      columnwidth: [1.2, 2, 1.2],
+    }],
+    layout: {
+      ...COMMON_LAYOUT,
+      height: rh(640),
+      autosize: true,
+      margin: { l: 0, r: 0, t: 10, b: 10 },
+    },
+  };
+}
+
+function buildRatesSingleCountry(statsMa, sentMa, country, nlpType, startDate, endDate) {
+  const stats = statsMa.filter(d => d.country === country && d.date >= startDate && d.date <= endDate);
+  const sent = sentMa.filter(d => d.country === country && d.date >= startDate && d.date <= endDate);
+
+  return {
+    data: [
+      {
+        x: sent.map(d => d.date),
+        y: sent.map(d => d[nlpType]),
+        name: `Sentiment (${NLP_LABELS[nlpType]})`,
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COUNTRY_COLORS[country] || COLORS.phase1, width: 2 },
+        yaxis: 'y',
+        hovertemplate: '<b>%{fullData.name}</b>: %{y:.3f}<br>%{x}<extra></extra>',
+      },
+      {
+        x: stats.map(d => d.date),
+        y: stats.map(d => d.cases),
+        name: 'Cases',
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COLORS.phase3, width: 1.4 },
+        yaxis: 'y2',
+        hovertemplate: '<b>%{fullData.name}</b>: %{y:.0f}<br>%{x}<extra></extra>',
+      },
+      {
+        x: stats.map(d => d.date),
+        y: stats.map(d => d.deaths),
+        name: 'Deaths',
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: COLORS.hard, width: 1.4 },
+        yaxis: 'y2',
+        hovertemplate: '<b>%{fullData.name}</b>: %{y:.0f}<br>%{x}<extra></extra>',
+      },
+    ],
+    layout: {
+      ...COMMON_LAYOUT,
+      height: rh(520),
+      autosize: true,
+      margin: { l: 60, r: 60, t: 50, b: 50 },
+      legend: { orientation: 'h', y: 1.1, x: 1, xanchor: 'right', font: { size: 10 } },
+      xaxis: { showgrid: false, title: { text: 'Date', font: { size: 11 } }, tickfont: { size: 10 } },
+      yaxis: {
+        title: { text: `Sentiment (${NLP_LABELS[nlpType]})`, font: { size: 11 } },
+        showgrid: true,
+        gridcolor: COLORS.borderSubtle,
+        tickfont: { size: 10 },
+        zeroline: true,
+        zerolinecolor: COLORS.border,
+      },
+      yaxis2: {
+        title: { text: 'Cases / Deaths', font: { size: 11 } },
+        overlaying: 'y',
+        side: 'right',
+        showgrid: false,
+        tickfont: { size: 10 },
+      },
+    },
+  };
+}
+
+// Registry: each entry returns { topic, render(shared, topicData, endDate) -> figure }
+const EMBED_REGISTRY = {
+  'models-covid': {
+    topic: 'covid',
+    render: (_s, td, end) => buildSentimentComp(td.sentComp, START_DATE, end),
+  },
+  'models-lockdown': {
+    topic: 'lockdown',
+    render: (_s, td, end) => buildSentimentComp(td.sentComp, START_DATE, end),
+  },
+  'country-sentiment': {
+    topic: 'covid',
+    render: (_s, td, end) => buildSentimentMA(td.sentMa, 'native', START_DATE, end),
+  },
+  'county-table': {
+    topic: 'covid',
+    render: (_s, td) => buildCountyRanking(td.county, 'native'),
+  },
+  'rates-england-covid': {
+    topic: 'covid',
+    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'England', 'native', START_DATE, end),
+  },
+  'rates-england-lockdown': {
+    topic: 'lockdown',
+    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'England', 'native', START_DATE, end),
+  },
+  'rates-scotland-covid': {
+    topic: 'covid',
+    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'Scotland', 'native', START_DATE, end),
+  },
+  'rates-scotland-lockdown': {
+    topic: 'lockdown',
+    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'Scotland', 'native', START_DATE, end),
+  },
+  'overall-table': {
+    topic: 'covid',
+    render: (_s, td) => buildNotableDays(td.notable, 'native'),
+  },
+};
+
+function showEmbedError(msg) {
+  const root = document.getElementById('embed-root');
+  const err = document.getElementById('embed-error');
+  const chart = document.getElementById('embed-chart');
+  if (root) root.hidden = false;
+  if (chart) chart.hidden = true;
+  if (err) {
+    err.hidden = false;
+    err.textContent = msg;
+  }
+}
+
+async function initEmbed(chartId) {
+  document.body.classList.add('embed-mode');
+  const root = document.getElementById('embed-root');
+  if (root) root.hidden = false;
+
+  const entry = EMBED_REGISTRY[chartId];
+  if (!entry) {
+    showEmbedError(`Unknown chart id: ${chartId}. Valid ids: ${Object.keys(EMBED_REGISTRY).join(', ')}`);
+    return;
+  }
+
+  try {
+    await loadSharedData();
+    const td = entry.topic ? await loadTopicData(entry.topic) : null;
+    const endDate = state.dates[state.dates.length - 1];
+    const figure = entry.render(state.shared, td, endDate);
+    Plotly.react(document.getElementById('embed-chart'), figure.data, figure.layout, CHART_CONFIG);
+
+    // Resize on viewport change
+    window.addEventListener('resize', () => {
+      const el = document.getElementById('embed-chart');
+      if (el && el._fullLayout) { try { Plotly.Plots.resize(el); } catch (_) {} }
+    });
+
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.style.display = 'none';
+  } catch (err) {
+    console.error('Embed init failed:', err);
+    showEmbedError(`Failed to load chart: ${err && err.message ? err.message : 'unknown error'}`);
+  }
+}
+
+function getEmbedParams() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('embed') !== '1') return null;
+  return { chart: p.get('chart') || '' };
+}
+
 async function init() {
+  const embed = getEmbedParams();
+  if (embed) {
+    return initEmbed(embed.chart);
+  }
   try {
     await loadSharedData();
     await loadTopicData('covid');
