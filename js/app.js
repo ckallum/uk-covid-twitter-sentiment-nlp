@@ -167,6 +167,17 @@ function formatNumber(n) {
   return n.toLocaleString();
 }
 
+/** Return the URL only if it's http(s); otherwise null (prevents javascript: href injection). */
+function safeHttpUrl(raw) {
+  if (typeof raw !== 'string' || !raw) return null;
+  try {
+    const u = new URL(raw);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================
 // Chart Builders
 // ============================================================
@@ -814,16 +825,38 @@ async function updateTimeline() {
     buildStatsGraph(shared.statsMa, shared.events.events_array, state.dates, START_DATE, date));
   renderChart('ma-sent-graph', buildSentimentMA(td.sentMa, nlpType, START_DATE, date));
 
-  // News
+  // News — build DOM nodes rather than interpolating into innerHTML (XSS-safe)
   const newsItems = shared.news[date] || [];
   const newsEl = document.getElementById('daily-news');
   if (newsEl) {
+    newsEl.replaceChildren();
     if (newsItems.length) {
-      newsEl.innerHTML = newsItems.map(n =>
-        `<a href="${n.url}" target="_blank" rel="noopener"><b>${n.headline}</b></a>`
-      ).join('<br><br>');
+      newsItems.forEach((n, i) => {
+        if (i > 0) {
+          newsEl.appendChild(document.createElement('br'));
+          newsEl.appendChild(document.createElement('br'));
+        }
+        const href = safeHttpUrl(n.url);
+        if (href) {
+          const a = document.createElement('a');
+          a.href = href;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          const b = document.createElement('b');
+          b.textContent = n.headline || '';
+          a.appendChild(b);
+          newsEl.appendChild(a);
+        } else {
+          const b = document.createElement('b');
+          b.textContent = n.headline || '';
+          newsEl.appendChild(b);
+        }
+      });
     } else {
-      newsEl.innerHTML = '<em style="color: var(--muted)">No news stories for this date.</em>';
+      const em = document.createElement('em');
+      em.style.color = 'var(--muted)';
+      em.textContent = 'No news stories for this date.';
+      newsEl.appendChild(em);
     }
   }
 
@@ -931,13 +964,25 @@ async function init() {
     console.error('Initialization failed:', err);
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-      overlay.innerHTML = `<div style="color: var(--hard); padding: 2rem; text-align: center">
-        <h3>Failed to load dashboard</h3>
-        <p>${err.message}</p>
-        <p style="font-size: 0.7rem; color: var(--muted); margin-top: 1rem">
-          Make sure you are serving via HTTP (not file://). Run: <code>python3 -m http.server</code>
-        </p>
-      </div>`;
+      overlay.replaceChildren();
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'color: var(--hard); padding: 2rem; text-align: center';
+
+      const h = document.createElement('h3');
+      h.textContent = 'Failed to load dashboard';
+
+      const msg = document.createElement('p');
+      msg.textContent = err && err.message ? err.message : 'Unknown error';
+
+      const hint = document.createElement('p');
+      hint.style.cssText = 'font-size: 0.7rem; color: var(--muted); margin-top: 1rem';
+      hint.append('Make sure you are serving via HTTP (not file://). Run: ');
+      const code = document.createElement('code');
+      code.textContent = 'python3 -m http.server';
+      hint.appendChild(code);
+
+      wrap.append(h, msg, hint);
+      overlay.appendChild(wrap);
     }
   }
 }

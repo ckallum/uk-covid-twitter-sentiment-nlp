@@ -126,13 +126,17 @@ def build_events(df_events):
     """Events array (one entry per date, empty string if no event) + key events list."""
     dates = all_dates()  # YYYY-MM-DD strings
 
-    # Normalize CSV dates to YYYY-MM-DD for comparison
+    # CSV dates are ISO (YYYY-MM-DD). Don't pass dayfirst=True — it silently
+    # swaps month/day when the day value is <= 12, producing corrupted dates.
     event_map = {}
     for _, row in df_events.iterrows():
         raw = str(row['Date']).strip()
         try:
-            parsed = pd.to_datetime(raw, dayfirst=True)
-            event_map[parsed.strftime('%Y-%m-%d')] = row['Event']
+            parsed = pd.to_datetime(raw)
+            iso = parsed.strftime('%Y-%m-%d')
+            # Only keep events within the dashboard's date range
+            if START_DATE <= iso <= END_DATE:
+                event_map[iso] = row['Event']
         except Exception:
             pass
 
