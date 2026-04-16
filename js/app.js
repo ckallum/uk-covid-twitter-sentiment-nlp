@@ -1064,43 +1064,43 @@ function buildRatesSingleCountry(statsMa, sentMa, country, nlpType, startDate, e
   };
 }
 
-// Registry: each entry returns { topic, render(shared, topicData, endDate) -> figure }
+// Registry: each entry declares a minimal loader and a render function.
 const EMBED_REGISTRY = {
   'models-covid': {
-    topic: 'covid',
-    render: (_s, td, end) => buildSentimentComp(td.sentComp, START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('covid/sentiment_comp.json')]),
+    render: ([dates, sentComp]) => buildSentimentComp(sentComp, START_DATE, dates.dates.at(-1)),
   },
   'models-lockdown': {
-    topic: 'lockdown',
-    render: (_s, td, end) => buildSentimentComp(td.sentComp, START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('lockdown/sentiment_comp.json')]),
+    render: ([dates, sentComp]) => buildSentimentComp(sentComp, START_DATE, dates.dates.at(-1)),
   },
   'country-sentiment': {
-    topic: 'covid',
-    render: (_s, td, end) => buildSentimentMA(td.sentMa, 'native', START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('covid/sentiment_ma.json')]),
+    render: ([dates, sentMa]) => buildSentimentMA(sentMa, 'native', START_DATE, dates.dates.at(-1)),
   },
   'county-table': {
-    topic: 'covid',
-    render: (_s, td) => buildCountyRanking(td.county, 'native'),
+    load: () => loadJSON('covid/county_sentiment.json').then(d => [d]),
+    render: ([county]) => buildCountyRanking(county, 'native'),
   },
   'rates-england-covid': {
-    topic: 'covid',
-    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'England', 'native', START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('covid_stats_ma.json'), loadJSON('covid/sentiment_ma.json')]),
+    render: ([dates, statsMa, sentMa]) => buildRatesSingleCountry(statsMa, sentMa, 'England', 'native', START_DATE, dates.dates.at(-1)),
   },
   'rates-england-lockdown': {
-    topic: 'lockdown',
-    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'England', 'native', START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('covid_stats_ma.json'), loadJSON('lockdown/sentiment_ma.json')]),
+    render: ([dates, statsMa, sentMa]) => buildRatesSingleCountry(statsMa, sentMa, 'England', 'native', START_DATE, dates.dates.at(-1)),
   },
   'rates-scotland-covid': {
-    topic: 'covid',
-    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'Scotland', 'native', START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('covid_stats_ma.json'), loadJSON('covid/sentiment_ma.json')]),
+    render: ([dates, statsMa, sentMa]) => buildRatesSingleCountry(statsMa, sentMa, 'Scotland', 'native', START_DATE, dates.dates.at(-1)),
   },
   'rates-scotland-lockdown': {
-    topic: 'lockdown',
-    render: (s, td, end) => buildRatesSingleCountry(s.statsMa, td.sentMa, 'Scotland', 'native', START_DATE, end),
+    load: () => Promise.all([loadJSON('dates.json'), loadJSON('covid_stats_ma.json'), loadJSON('lockdown/sentiment_ma.json')]),
+    render: ([dates, statsMa, sentMa]) => buildRatesSingleCountry(statsMa, sentMa, 'Scotland', 'native', START_DATE, dates.dates.at(-1)),
   },
   'overall-table': {
-    topic: 'covid',
-    render: (_s, td) => buildNotableDays(td.notable, 'native'),
+    load: () => loadJSON('covid/notable_days.json').then(d => [d]),
+    render: ([notable]) => buildNotableDays(notable, 'native'),
   },
 };
 
@@ -1119,6 +1119,7 @@ function showEmbedError(msg) {
 async function initEmbed(chartId) {
   document.body.classList.add('embed-mode');
   const root = document.getElementById('embed-root');
+  const chartEl = document.getElementById('embed-chart');
   if (root) root.hidden = false;
 
   const entry = EMBED_REGISTRY[chartId];
@@ -1128,16 +1129,30 @@ async function initEmbed(chartId) {
   }
 
   try {
-    await loadSharedData();
-    const td = entry.topic ? await loadTopicData(entry.topic) : null;
-    const endDate = state.dates[state.dates.length - 1];
-    const figure = entry.render(state.shared, td, endDate);
-    Plotly.react(document.getElementById('embed-chart'), figure.data, figure.layout, CHART_CONFIG);
+    const data = await entry.load();
 
-    // Resize on viewport change
+    const renderEmbed = () => {
+      const figure = entry.render(data);
+      figure.layout = { ...figure.layout, height: window.innerHeight };
+      Plotly.react(chartEl, figure.data, figure.layout, CHART_CONFIG);
+    };
+
+    renderEmbed();
+
+    let lastBucket = viewportBucket();
     window.addEventListener('resize', () => {
-      const el = document.getElementById('embed-chart');
-      if (el && el._fullLayout) { try { Plotly.Plots.resize(el); } catch (_) {} }
+      const bucket = viewportBucket();
+      if (bucket !== lastBucket) {
+        lastBucket = bucket;
+        renderEmbed();
+        return;
+      }
+      if (chartEl && chartEl._fullLayout) {
+        try {
+          Plotly.relayout(chartEl, { height: window.innerHeight });
+          Plotly.Plots.resize(chartEl);
+        } catch (_) {}
+      }
     });
 
     const overlay = document.getElementById('loading-overlay');
