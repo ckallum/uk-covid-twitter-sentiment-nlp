@@ -912,3 +912,32 @@ input[type="range"]::-moz-range-thumb {
     min-height: 280px;
   }
 }
+
+/* --- Embed Mode (?embed=1) --- */
+body.embed-mode {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+body.embed-mode::before,
+body.embed-mode::after { display: none; }
+body.embed-mode .container,
+body.embed-mode .container.wide,
+body.embed-mode #loading-overlay { display: none !important; }
+body.embed-mode #embed-root {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+body.embed-mode #embed-chart {
+  width: 100%;
+  min-height: 100vh;
+}
+body.embed-mode #embed-error {
+  padding: 1rem;
+  color: var(--hard);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+}

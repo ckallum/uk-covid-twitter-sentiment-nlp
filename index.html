@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>COVID-19 Sentiment Analysis Dashboard</title>
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +16,12 @@
 
   <!-- Loading Overlay -->
   <div id="loading-overlay">Loading...</div>
+
+  <!-- Embed root (only rendered when ?embed=1) -->
+  <div id="embed-root" hidden>
+    <div id="embed-chart" class="chart"></div>
+    <div id="embed-error" hidden></div>
+  </div>
 
   <div class="container wide">
 
